@@ -11,6 +11,18 @@ st.set_page_config(
     layout="wide"
 )
 
+# # Apply custom theme
+# st.markdown("""
+#     <style>
+#     :root {
+#         --primary-color: #64DC99;
+#         --background-color: #FFFFFF;
+#         --secondary-background-color: #F0F5FF;
+#         --text-color: #19202A;
+#     }
+#     </style>
+#     """, unsafe_allow_html=True)
+
 # Title
 st.title("Disease Risk Prediction Demo")
 st.write("This demo shows how genetic and lifestyle data can be used to predict disease risks.")

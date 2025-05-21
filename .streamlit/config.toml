@@ -1,0 +1,10 @@
+[theme]
+primaryColor = "#000000"  # BLACK
+backgroundColor = "#FFFFFF"  # Clean white background
+
+# Background color used for the sidebar and most interactive widgets
+secondaryBackgroundColor = "#FFF5E9"  # LIGHT CREME DOK BEKA
+font = "sans serif"  # Clean, professional font
+textColor = "#F64BFB"  # PINK DOK BEKA
+
+
