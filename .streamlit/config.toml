@@ -1,10 +1,11 @@
 [theme]
 primaryColor = "#147B36"  
 
-backgroundColor = "#ecf4ed"  # Clean white background
+backgroundColor = "#f0f7f1"  # Clean white background
 
 # Background color used for the sidebar and most interactive widgets
-secondaryBackgroundColor = "#7FBA9D"  
+
+secondaryBackgroundColor = "#a3d8bf"  
 font = "sans serif"  # Clean, professional font
 textColor = "#393E41"
 
