@@ -1,10 +1,11 @@
 [theme]
-primaryColor = "#000000"  # Medical blue
-backgroundColor = "#D9E5DA"  # Clean white background
+primaryColor = "#147B36"  
+
+backgroundColor = "#ecf4ed"  # Clean white background
 
 # Background color used for the sidebar and most interactive widgets
-secondaryBackgroundColor = "#147B36"  # LIGHT CREME DOK BEKA
+secondaryBackgroundColor = "#7FBA9D"  
 font = "sans serif"  # Clean, professional font
-textColor = "#393E41"  # PINK DOK BEKA
+textColor = "#393E41"
 
 
