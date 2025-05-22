@@ -5,14 +5,16 @@ import pandas as pd
 import numpy as np
 
 # Set page config
+
 st.set_page_config(
     page_title="Disease Risk Prediction Demo",
     page_icon="🧬",
     layout="wide"
 )
 
+st.image("https://kalgenlab.co.id/assets/images/kalgen.png", width=100)
 # Title
-st.title("Disease Risk Prediction Demo")
+st.title("🧬 Disease Risk Prediction Demo")
 st.write("This demo shows how genetic and lifestyle data can be used to predict disease risks.")
 
 # Create sections
