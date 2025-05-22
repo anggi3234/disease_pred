@@ -11,6 +11,18 @@ st.set_page_config(
     layout="wide"
 )
 
+# # Apply custom theme
+# st.markdown("""
+#     <style>
+#     :root {
+#         --primary-color: #64DC99;
+#         --background-color: #FFFFFF;
+#         --secondary-background-color: #F0F5FF;
+#         --text-color: #19202A;
+#     }
+#     </style>
+#     """, unsafe_allow_html=True)
+
 # Title
 st.title("Disease Risk Prediction Demo")
 st.write("This demo shows how genetic and lifestyle data can be used to predict disease risks.")
@@ -40,6 +52,42 @@ def personal_info_section():
         "weight": weight,
         "occupation": occupation,
         "activity_level": activity_level
+    }
+
+def dietary_section():
+    st.header("Dietary Patterns")
+    
+    diet_pattern = st.selectbox(
+        "Dietary Pattern",
+        ["Omnivore", "Mediterranean", "Vegetarian", "Vegan", "Pescatarian", "Low-carb", "Ketogenic", "Other"]
+    )
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Daily Consumption")
+        fruits = st.selectbox("Fruits (portions per day)", [0, 1, 2, 3, 4, "5+"])
+        vegetables = st.selectbox("Vegetables (portions per day)", [0, 1, 2, 3, 4, "5+"])
+        whole_grains = st.selectbox("Whole grains (portions per day)", [0, 1, 2, 3, 4, "5+"])
+        dairy = st.selectbox("Dairy products (portions per day)", [0, 1, 2, 3, 4, "5+"])
+    
+    with col2:
+        st.subheader("Protein Sources")
+        red_meat = st.selectbox("Red meat (portions per day)", [0, 1, 2, 3, 4, "5+"])
+        poultry = st.selectbox("Poultry (portions per day)", [0, 1, 2, 3, 4, "5+"])
+        fish = st.selectbox("Fish (portions per day)", [0, 1, 2, 3, 4, "5+"])
+        legumes = st.selectbox("Legumes (portions per day)", [0, 1, 2, 3, 4, "5+"])
+    
+    return {
+        "diet_pattern": diet_pattern,
+        "fruits": fruits,
+        "vegetables": vegetables,
+        "whole_grains": whole_grains,
+        "dairy": dairy,
+        "red_meat": red_meat,
+        "poultry": poultry,
+        "fish": fish,
+        "legumes": legumes
     }
 
 def physical_activity_section():
@@ -106,6 +154,38 @@ def lifestyle_section():
         "alcohol": alcohol
     }
 
+def environmental_section():
+    st.header("Environmental Factors")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        sun_exposure = st.selectbox(
+            "Average daily sun exposure",
+            ["<15 min", "15-30 min", "30-60 min", "1-2 hours", "2+ hours"]
+        )
+        sunscreen = st.selectbox("Do you use sunscreen regularly?", ["Yes", "No"])
+    
+    with col2:
+        pollution_exposure = st.selectbox(
+            "Exposure to pollution (e.g., traffic, industrial)",
+            ["Low", "Moderate", "High"]
+        )
+        chemical_exposure = st.selectbox(
+            "Occupational exposures to chemicals/toxins",
+            ["No", "Yes"]
+        )
+        if chemical_exposure == "Yes":
+            chemical_details = st.text_input("Please specify chemical exposures")
+    
+    return {
+        "sun_exposure": sun_exposure,
+        "sunscreen_use": sunscreen,
+        "pollution_exposure": pollution_exposure,
+        "chemical_exposure": chemical_exposure,
+        "chemical_details": chemical_details if chemical_exposure == "Yes" else ""
+    }
+
 def health_conditions_section():
     st.header("Health Status")
     
@@ -163,6 +243,36 @@ def health_conditions_section():
         "conditions": conditions,
         "medications": medications,
         "symptoms": symptoms
+    }
+
+def weight_management_section():
+    st.header("Weight Management")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        weight_change = st.selectbox(
+            "Has your weight changed in the past year?",
+            ["No change", "Lost weight", "Gained weight"]
+        )
+        if weight_change != "No change":
+            weight_amount = st.number_input("By how many kg?", min_value=0.0, max_value=100.0, value=0.0)
+    
+    with col2:
+        intentional = st.selectbox(
+            "Was this change intentional?",
+            ["Yes", "No", "Not applicable"]
+        )
+        diet_history = st.text_area(
+            "Which diets have worked best for you in the past?",
+            height=100
+        )
+    
+    return {
+        "weight_change": weight_change,
+        "weight_amount": weight_amount if weight_change != "No change" else 0,
+        "intentional": intentional,
+        "diet_history": diet_history
     }
 
 def eating_behavior_section():
@@ -226,6 +336,10 @@ def process_questionnaire_data(data):
     features['bmi'] = data['personal']['weight'] / ((data['personal']['height']/100) ** 2)
     features['gender_male'] = 1 if data['personal']['sex'] == 'Male' else 0
     
+    # Process diet features
+    features['diet_mediterranean'] = 1 if data['diet']['diet_pattern'] == 'Mediterranean' else 0
+    features['diet_quality'] = calculate_diet_quality(data['diet'])
+    
     # Process activity features
     features['met_hours'] = calculate_met_hours(data['activity'])
     
@@ -233,14 +347,40 @@ def process_questionnaire_data(data):
     features['sleep_score'] = calculate_sleep_score(data['lifestyle'])
     features['stress_score'] = calculate_stress_score(data['lifestyle'])
     features['smoking_risk'] = calculate_smoking_risk(data['lifestyle'])
-    features['alcohol_risk'] = calculate_alcohol_risk(data['lifestyle'])
     
-    # Process health features
+    # New feature processing
+    features['sun_exposure_score'] = calculate_sun_exposure_score(data['environmental'])
+    features['environmental_risk'] = calculate_environmental_risk(data['environmental'])
     features['health_condition_score'] = calculate_health_condition_score(data['health'])
     features['symptom_severity'] = calculate_symptom_severity(data['health'])
     features['eating_behavior_score'] = calculate_eating_behavior_score(data['eating'])
     
     return features
+
+def calculate_diet_quality(diet_data):
+    """Calculate a diet quality score (0-1)"""
+    score = 0
+    max_score = 8  # Number of factors we're considering
+    
+    # Convert '5+' to 5 for numerical calculations
+    def convert_portion(x):
+        return 5 if x == '5+' else int(x)
+    
+    # Add points for healthy foods
+    score += min(convert_portion(diet_data['fruits']) / 3, 1)
+    score += min(convert_portion(diet_data['vegetables']) / 3, 1)
+    score += min(convert_portion(diet_data['whole_grains']) / 3, 1)
+    score += min(convert_portion(diet_data['fish']) / 2, 1)
+    score += min(convert_portion(diet_data['legumes']) / 2, 1)
+    
+    # Subtract points for less healthy patterns
+    score += (1 - min(convert_portion(diet_data['red_meat']) / 2, 1))
+    
+    # Add points for healthy diet patterns
+    if diet_data['diet_pattern'] in ['Mediterranean', 'Vegetarian', 'Vegan']:
+        score += 1
+    
+    return score / max_score
 
 def calculate_met_hours(activity_data):
     """Calculate MET hours based on exercise frequency, duration and intensity"""
@@ -308,16 +448,26 @@ def calculate_smoking_risk(lifestyle_data):
     }
     return smoking_map[lifestyle_data['smoking']]
 
-def calculate_alcohol_risk(lifestyle_data):
-    """Calculate alcohol risk score (0-1)"""
-    alcohol_map = {
-        'Never': 0.1,
-        'Monthly or less': 0.2,
-        '2-4 times a month': 0.4,
-        '2-3 times a week': 0.7,
-        '4+ times a week': 1.0
+def calculate_sun_exposure_score(env_data):
+    """Calculate sun exposure score (0-1)"""
+    exposure_map = {
+        '<15 min': 0.2,
+        '15-30 min': 0.6,
+        '30-60 min': 0.8,
+        '1-2 hours': 1.0,
+        '2+ hours': 0.7  # Too much exposure can be harmful
     }
-    return alcohol_map[lifestyle_data['alcohol']]
+    base_score = exposure_map[env_data['sun_exposure']]
+    if env_data['sunscreen_use'] == 'Yes':
+        base_score *= 0.8  # Reduce effective exposure with sunscreen
+    return base_score
+
+def calculate_environmental_risk(env_data):
+    """Calculate environmental risk score (0-1)"""
+    pollution_map = {'Low': 0.2, 'Moderate': 0.5, 'High': 0.8}
+    chemical_exposure = 0.7 if env_data['chemical_exposure'] == 'Yes' else 0.1
+    
+    return (pollution_map[env_data['pollution_exposure']] + chemical_exposure) / 2
 
 def calculate_health_condition_score(health_data):
     """Calculate health condition risk score (0-1)"""
@@ -335,7 +485,7 @@ def calculate_health_condition_score(health_data):
         'Skin conditions': 0.4
     }
     
-    total_weight = sum(condition_weights[c] for c in health_data['conditions'] if c != 'None')
+    total_weight = sum(condition_weights[c] for c in health_data['conditions'])
     return min(total_weight / 3, 1.0)  # Normalize to 0-1
 
 def calculate_symptom_severity(health_data):
@@ -385,43 +535,42 @@ def calculate_risk_scores(features):
     
     # Metabolic health risk
     metabolic_risk = (
-        0.3 * max(0, (features['bmi'] - 18.5) / (30 - 18.5)) +  # BMI contribution
-        0.2 * (1 - min(features['met_hours'] / 40, 1)) +  # Activity contribution
-        0.2 * features['eating_behavior_score'] +  # Eating behavior contribution
+        0.25 * (features['bmi'] - 18.5) / (30 - 18.5) +  # BMI contribution
+        0.2 * (1 - features['diet_quality']) +  # Diet contribution
+        0.15 * (1 - min(features['met_hours'] / 40, 1)) +  # Activity contribution
+        0.15 * features['eating_behavior_score'] +  # Eating behavior contribution
         0.15 * features['stress_score'] +  # Stress contribution
-        0.1 * features['smoking_risk'] +  # Smoking contribution
-        0.05 * features['alcohol_risk']  # Alcohol contribution
+        0.1 * features['smoking_risk']  # Smoking contribution
     )
     risk_scores['metabolic_health'] = max(0, min(1, metabolic_risk))
     
     # Cardiovascular risk
     cv_risk = (
-        0.25 * (features['age'] - 20) / (80 - 20) +  # Age contribution
-        0.2 * (1 - min(features['met_hours'] / 40, 1)) +  # Activity contribution
-        0.2 * features['stress_score'] +  # Stress contribution
+        0.2 * (features['age'] - 20) / (80 - 20) +  # Age contribution
+        0.2 * (1 - features['diet_quality']) +  # Diet contribution
+        0.15 * (1 - min(features['met_hours'] / 40, 1)) +  # Activity contribution
+        0.15 * features['stress_score'] +  # Stress contribution
         0.15 * features['smoking_risk'] +  # Smoking contribution
-        0.1 * features['alcohol_risk'] +  # Alcohol contribution
-        0.1 * features['health_condition_score']  # Existing conditions contribution
+        0.15 * features['health_condition_score']  # Existing conditions contribution
     )
     risk_scores['cardiovascular'] = max(0, min(1, cv_risk))
     
     # Sleep and recovery risk
     recovery_risk = (
-        0.35 * (1 - features['sleep_score']) +  # Sleep contribution
-        0.3 * features['stress_score'] +  # Stress contribution
+        0.3 * (1 - features['sleep_score']) +  # Sleep contribution
+        0.25 * features['stress_score'] +  # Stress contribution
         0.25 * features['symptom_severity'] +  # Symptoms contribution
-        0.1 * (1 - min(features['met_hours'] / 40, 1))  # Activity contribution
+        0.2 * (1 - min(features['met_hours'] / 40, 1))  # Activity contribution
     )
     risk_scores['sleep_recovery'] = max(0, min(1, recovery_risk))
     
-    # Lifestyle risk
-    lifestyle_risk = (
-        0.3 * features['smoking_risk'] +  # Smoking contribution
-        0.25 * features['alcohol_risk'] +  # Alcohol contribution
-        0.25 * features['stress_score'] +  # Stress contribution
-        0.2 * features['symptom_severity']  # Symptoms contribution
+    # Environmental health risk
+    env_risk = (
+        0.4 * features['environmental_risk'] +  # Environmental exposures
+        0.3 * (1 - features['sun_exposure_score']) +  # Sun exposure
+        0.3 * features['symptom_severity']  # Symptoms contribution
     )
-    risk_scores['lifestyle'] = max(0, min(1, lifestyle_risk))
+    risk_scores['environmental'] = max(0, min(1, env_risk))
     
     return risk_scores
 
@@ -432,15 +581,13 @@ def generate_recommendations(risk_scores, features):
     # Metabolic health recommendations
     if risk_scores['metabolic_health'] > 0.6:
         recs = [
+            "Consider adopting a Mediterranean diet pattern",
             "Aim for 150 minutes of moderate exercise per week",
-            "Monitor portion sizes and meal timing",
-            "Consider consulting a nutritionist for personalized dietary advice"
+            "Monitor portion sizes and meal timing"
         ]
         if features['eating_behavior_score'] > 0.6:
             recs.append("Practice mindful eating techniques")
             recs.append("Keep a food diary to track emotional eating triggers")
-        if features['bmi'] > 25:
-            recs.append("Focus on gradual, sustainable weight management")
         recommendations.append({
             'category': 'Metabolic Health',
             'recommendations': recs
@@ -450,13 +597,11 @@ def generate_recommendations(risk_scores, features):
     if risk_scores['cardiovascular'] > 0.6:
         recs = [
             "Increase aerobic exercise frequency",
-            "Consider stress management techniques",
-            "Monitor blood pressure regularly"
+            "Reduce saturated fat intake",
+            "Consider stress management techniques"
         ]
         if features['health_condition_score'] > 0.6:
-            recs.append("Regular cardiovascular health monitoring with healthcare provider")
-        if features['smoking_risk'] > 0.5:
-            recs.append("Consider smoking cessation programs")
+            recs.append("Regular blood pressure and cholesterol monitoring")
         recommendations.append({
             'category': 'Cardiovascular Health',
             'recommendations': recs
@@ -471,34 +616,27 @@ def generate_recommendations(risk_scores, features):
         ]
         if features['symptom_severity'] > 0.6:
             recs.append("Consider consulting a sleep specialist")
-        if features['stress_score'] > 0.6:
-            recs.append("Explore stress management techniques like meditation or yoga")
         recommendations.append({
             'category': 'Sleep & Recovery',
             'recommendations': recs
         })
     
-    # Lifestyle recommendations
-    if risk_scores['lifestyle'] > 0.6:
+    # Environmental health recommendations
+    if risk_scores['environmental'] > 0.6:
         recs = []
-        if features['smoking_risk'] > 0.5:
+        if features['environmental_risk'] > 0.6:
             recs.extend([
-                "Consider smoking cessation programs",
-                "Seek support from healthcare providers for quitting smoking"
+                "Use air purifiers in living spaces",
+                "Consider wearing protective equipment when exposed to pollutants"
             ])
-        if features['alcohol_risk'] > 0.6:
+        if features['sun_exposure_score'] < 0.4:
             recs.extend([
-                "Consider reducing alcohol consumption",
-                "Explore alcohol-free social activities"
-            ])
-        if features['stress_score'] > 0.6:
-            recs.extend([
-                "Practice daily stress management techniques",
-                "Consider counseling or therapy for stress management"
+                "Gradually increase sun exposure (15-30 minutes daily)",
+                "Consider vitamin D supplementation"
             ])
         if recs:
             recommendations.append({
-                'category': 'Lifestyle Health',
+                'category': 'Environmental Health',
                 'recommendations': recs
             })
     
@@ -537,7 +675,7 @@ def display_results(risk_scores, recommendations):
     with col2:
         display_risk_metric("Sleep & Recovery Risk", risk_scores['sleep_recovery'])
         st.divider()
-        display_risk_metric("Lifestyle Risk", risk_scores['lifestyle'])
+        display_risk_metric("Environmental Health Risk", risk_scores['environmental'])
     
     st.header("Your Personalized Health Recommendations")
     
@@ -548,13 +686,13 @@ def display_results(risk_scores, recommendations):
             with st.expander(f"🎯 {category['category']} Recommendations", expanded=True):
                 st.subheader("Why these recommendations?")
                 if category['category'] == 'Metabolic Health':
-                    st.write("These recommendations focus on optimizing your metabolism through exercise and lifestyle changes. Following these guidelines can help maintain healthy weight, blood sugar levels, and overall metabolic function.")
+                    st.write("These recommendations focus on optimizing your metabolism through diet, exercise, and lifestyle changes. Following these guidelines can help maintain healthy weight, blood sugar levels, and overall metabolic function.")
                 elif category['category'] == 'Cardiovascular Health':
-                    st.write("Heart health is influenced by multiple factors including exercise, stress, and lifestyle choices. These recommendations aim to support your cardiovascular system and reduce risk factors.")
+                    st.write("Heart health is influenced by multiple factors including diet, exercise, stress, and lifestyle choices. These recommendations aim to support your cardiovascular system and reduce risk factors.")
                 elif category['category'] == 'Sleep & Recovery':
                     st.write("Quality sleep and proper recovery are essential for overall health, immune function, and mental well-being. These suggestions can help improve your sleep quality and stress management.")
-                elif category['category'] == 'Lifestyle Health':
-                    st.write("Lifestyle factors like smoking, alcohol consumption, and stress management significantly impact your overall health. These recommendations help address key lifestyle risk factors.")
+                elif category['category'] == 'Environmental Health':
+                    st.write("Environmental factors can significantly impact your health. These recommendations help protect against environmental stressors and optimize exposure to beneficial elements like sunlight.")
                 
                 st.subheader("Action Steps")
                 for i, rec in enumerate(category['recommendations'], 1):
@@ -569,18 +707,18 @@ def display_results(risk_scores, recommendations):
                 elif category['category'] == 'Cardiovascular Health':
                     st.write("• Begin with walking and gradually increase intensity")
                     st.write("• Monitor your heart rate during exercise")
+                    st.write("• Include heart-healthy foods like omega-3 rich fish")
                     st.write("• Practice stress-reduction techniques daily")
-                    st.write("• Consider joining a fitness group for motivation")
                 elif category['category'] == 'Sleep & Recovery':
                     st.write("• Create a consistent bedtime routine")
                     st.write("• Make your bedroom dark, quiet, and cool")
                     st.write("• Avoid screens 1-2 hours before bed")
                     st.write("• Practice relaxation techniques before sleep")
-                elif category['category'] == 'Lifestyle Health':
-                    st.write("• Set specific, achievable goals for lifestyle changes")
-                    st.write("• Build a support network for accountability")
-                    st.write("• Consider professional help when needed")
-                    st.write("• Celebrate small victories in your health journey")
+                elif category['category'] == 'Environmental Health':
+                    st.write("• Check local air quality reports regularly")
+                    st.write("• Create a clean air zone in your home")
+                    st.write("• Use appropriate protective equipment when needed")
+                    st.write("• Balance sun exposure with skin protection")
     
     st.header("Track Your Progress")
     st.write("To improve your health outcomes:")
@@ -612,9 +750,12 @@ def main():
         with st.form("health_questionnaire"):
             # Collect data from each section
             personal_data = personal_info_section()
+            dietary_data = dietary_section()
             activity_data = physical_activity_section()
             lifestyle_data = lifestyle_section()
+            environmental_data = environmental_section()
             health_data = health_conditions_section()
+            weight_data = weight_management_section()
             eating_data = eating_behavior_section()
             genetic_data = genetic_testing_section()
             
@@ -625,9 +766,12 @@ def main():
                 # Store the collected data
                 st.session_state.questionnaire_data = {
                     'personal': personal_data,
+                    'diet': dietary_data,
                     'activity': activity_data,
                     'lifestyle': lifestyle_data,
+                    'environmental': environmental_data,
                     'health': health_data,
+                    'weight': weight_data,
                     'eating': eating_data,
                     'genetic': genetic_data
                 }
