@@ -13,7 +13,7 @@ st.set_page_config(
 
 st.image("https://www.kalgeninnolab.co.id/frontend/web/images/kalgen-logo-home.png", width=120)
 # Title
-st.title("Disease Risk Prediction Demo")
+st.title("🧬 Disease Risk Prediction Demo")
 st.write("This demo shows how genetic and lifestyle data can be used to predict disease risks.")
 
 # Create sections
