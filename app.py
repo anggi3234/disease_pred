@@ -5,16 +5,15 @@ import pandas as pd
 import numpy as np
 
 # Set page config
-
 st.set_page_config(
     page_title="Disease Risk Prediction Demo",
     page_icon="🧬",
     layout="wide"
 )
 
-st.image("https://kalgenlab.co.id/assets/images/kalgen.png", width=100)
+st.image("https://www.kalgeninnolab.co.id/frontend/web/images/kalgen-logo-home.png", width=120)
 # Title
-st.title("🧬 Disease Risk Prediction Demo")
+st.title("Disease Risk Prediction Demo")
 st.write("This demo shows how genetic and lifestyle data can be used to predict disease risks.")
 
 # Create sections
@@ -621,7 +620,7 @@ def main():
             genetic_data = genetic_testing_section()
             
             # Submit button
-            submitted = st.form_submit_button("Calculate Risk Scores")
+            submitted = st.form_submit_button("Calculate Risk Scores", icon=":material/check_circle:")
             
             if submitted:
                 # Store the collected data
@@ -634,6 +633,11 @@ def main():
                     'genetic': genetic_data
                 }
                 st.session_state.show_results = True
+                
+                # Show success message and redirect instruction
+                st.success("✅ Risk scores calculated successfully!")
+                st.info("👆 **Please click on the 'Results' tab above to view your personalized health assessment and recommendations.**")
+                st.balloons()  # Add a celebratory animation
     
     with tab2:
         if 'show_results' in st.session_state and st.session_state.show_results:
