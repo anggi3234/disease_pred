@@ -714,7 +714,6 @@ def display_results(risk_scores, recommendations):
             
             try:
                 st.image(image_path, caption=caption, use_container_width=True)
-                #st.markdown("[![Foo](http://www.google.com.au/images/nav_logo7.png)](http://google.com.au/)")
             except:
                 st.error(f"Image not found: {image_path}")
         
