@@ -5,6 +5,58 @@ import pandas as pd
 import numpy as np
 import math
 
+# --- LANGUAGE DICTIONARY ---
+LANG = {
+    'en': {
+        'title': "🧬 Disease Risk Prediction",
+        'subtitle': "Find out how your lifestyle and health conditions can be used to predict disease risks.",
+        'personal_info': "Personal Information",
+        'age': "Age",
+        'height': "Height (cm)",
+        'occupation': "Occupation",
+        'waist': "Waist Circumference (cm)",
+        'sex': "Sex",
+        'sex_options': ["Male", "Female"],
+        'weight': "Weight (kg)",
+        'activity_level': "Work Activity Level",
+        'activity_options': ["Sedentary", "Lightly active", "Moderately active", "Very active"],
+        'form_title': "📝 Health Risk Assessment Questionnaire",
+        'submit_button': "Calculate Risk Scores",
+        'results_title': "📊 Your Health Risk Assessment Results",
+        'back_button': "🔙 Back to Questionnaire",
+        'success_msg': "✅ Risk scores calculated successfully!"
+    },
+    'id': {
+        'title': "🧬 Prediksi Risiko Penyakit",
+        'subtitle': "Cari tahu bagaimana gaya hidup dan kondisi kesehatan Anda dapat digunakan untuk memprediksi risiko penyakit.",
+        'personal_info': "Informasi Pribadi",
+        'age': "Usia",
+        'height': "Tinggi Badan (cm)",
+        'occupation': "Pekerjaan",
+        'waist': "Lingkar Pinggang (cm)",
+        'sex': "Jenis Kelamin",
+        'sex_options': ["Laki-laki", "Perempuan"],
+        'weight': "Berat Badan (kg)",
+        'activity_level': "Tingkat Aktivitas Pekerjaan",
+        'activity_options': ["Duduk terus-menerus", "Sedikit aktif", "Cukup aktif", "Sangat aktif"],
+        'form_title': "📝 Kuesioner Penilaian Risiko Kesehatan",
+        'submit_button': "Hitung Skor Risiko",
+        'results_title': "📊 Hasil Penilaian Risiko Kesehatan Anda",
+        'back_button': "🔙 Kembali ke Kuesioner",
+        'success_msg': "✅ Skor risiko berhasil dihitung!"
+    }
+}
+
+# --- LANGUAGE SELECTION ---
+if 'lang' not in st.session_state:
+    st.session_state.lang = 'en'
+
+lang_choice = st.selectbox("🌐 Language / Bahasa", ['English', 'Bahasa Indonesia'])
+st.session_state.lang = 'en' if lang_choice == 'English' else 'id'
+T = LANG[st.session_state.lang]
+
+
+
 # Set page config
 st.set_page_config(
     page_title="Disease Risk Prediction Demo",
@@ -19,31 +71,28 @@ st.write("Find out how your lifestyle and health conditions can be used to predi
 
 # Create sections
 def personal_info_section():
-    st.header("Personal Information")
+    st.header(T['personal_info'])
     col1, col2 = st.columns(2)
     
     with col1:
-        age = st.number_input("Age", min_value=0, max_value=120, value=30)
-        height = st.number_input("Height (cm)", min_value=0, max_value=300, value=170)
-        occupation = st.text_input("Occupation")
-        waist_circumference = st.number_input("Waist Circumference (cm)", min_value=0, max_value=200, value=80)
-    
+        age = st.number_input(T['age'], min_value=0, max_value=120, value=30)
+        height = st.number_input(T['height'], min_value=0, max_value=300, value=170)
+        occupation = st.text_input(T['occupation'])
+        waist = st.number_input(T['waist'], min_value=0, max_value=200, value=80)
+
     with col2:
-        sex = st.selectbox("Sex", ["Male", "Female"])
-        weight = st.number_input("Weight (kg)", min_value=0, max_value=500, value=70)
-        activity_level = st.selectbox(
-            "Work Activity Level",
-            ["Sedentary", "Lightly active", "Moderately active", "Very active"]
-        )
-    
+        sex = st.selectbox(T['sex'], T['sex_options'])
+        weight = st.number_input(T['weight'], min_value=0, max_value=500, value=70)
+        activity = st.selectbox(T['activity_level'], T['activity_options'])
+
     return {
         "age": age,
         "sex": sex,
         "height": height,
         "weight": weight,
         "occupation": occupation,
-        "activity_level": activity_level,
-        "waist_circumference": waist_circumference
+        "activity_level": activity,
+        "waist_circumference": waist
     }
 
 def physical_activity_section():
