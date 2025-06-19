@@ -1024,7 +1024,7 @@ def calculate_framingham_risk_score(features):
     # Fasting glucose
     if fasting_glucose >= 126:  # Diabetes range
         risk_score += 2
-    elif fasting_glucose >= 100:  # Prediabetes range
+    elif fasting_glucose >= 100:  # Prediabetes range     
         risk_score += 1
     
     # Convert to probability (adjusted for enhanced scoring)
@@ -1224,7 +1224,7 @@ def display_results(risk_scores, recommendations):
                 elif risk_key == 'cancer':
                     image_path = 'assets/Kalscanner69.png'
                     caption = "Kalscanner69 - Cancer Screening" if st.session_state.lang == 'en' else "Kalscanner69 – Deteksi Kanker"
-                elif risk_key == 'metabolic_lifestyle':
+                elif risk_key == 'metabolic_lifestyle': 
                     image_path = 'assets/GENME_LIFE.png'
                     caption = "GENME Life - Metabolic Health" if st.session_state.lang == 'en' else "GENME Life – Kesehatan Metabolik"
                 
