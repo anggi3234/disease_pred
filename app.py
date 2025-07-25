@@ -8,6 +8,11 @@ import csv
 import json
 import os
 from datetime import datetime
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+import io
+
+
 
 # Set page config
 st.set_page_config(
@@ -1243,6 +1248,8 @@ def display_results(risk_scores, recommendations):
         if st.button(T['inquiry_button'], use_container_width=True):
             st.markdown(T['contact_whatsapp'])
 
+DRIVE_FOLDER_ID = '1NrnIvAUszGLMahXanXjgLQ9u0_0oshDZ' 
+
 # Main app flow
 def main():
     # Initialize session state
@@ -1358,7 +1365,7 @@ def main():
                         'cancer_risk': round(risk_scores.get('cancer', 0) * 100, 1) if 'cancer' in risk_scores else 'N/A'
                     }
                     
-                    # Save to CSV (append mode)
+                     # Save to CSV (append mode) - unchanged
                     csv_path = 'submissions/submissions.csv'
                     file_exists = os.path.isfile(csv_path)
                     with open(csv_path, 'a', newline='') as csvfile:
@@ -1367,14 +1374,41 @@ def main():
                             writer.writeheader()  # Write header only once
                         writer.writerow(flat_data)
                     
-                    # Save to JSON (new file per submission) - unchanged, saves full nested data
+                    # Save to JSON (new file per submission)
                     json_path = f'submissions/submission_{questionnaire_data["timestamp"].replace(":", "-")}.json'
                     with open(json_path, 'w') as jsonfile:
                         json.dump(questionnaire_data, jsonfile, indent=4)
                     
-                    st.success("Data saved locally to CSV and JSON!")
+                    # New: Upload JSON to Google Drive using service account
+                    # Set up authentication
+                    gauth = GoogleAuth()
+                    if 'GOOGLE_CREDENTIALS' in st.secrets:  # For Streamlit Cloud deployment
+                        # Load from secrets as JSON
+                        credentials_dict = json.loads(st.secrets['GOOGLE_CREDENTIALS'])
+                        gauth.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+                            credentials_dict,
+                            scopes=['https://www.googleapis.com/auth/drive']
+                        )
+                    else:  # Local fallback: load from file
+                        gauth.LoadCredentialsFile('dnacare.json')
+                        if gauth.credentials is None:
+                            gauth.Auth()  # This should use the service account file
+                        gauth.SaveCredentialsFile('dnacare.json')
+                    
+                    drive = GoogleDrive(gauth)
+                    
+                    # Create file metadata and upload
+                    file_metadata = {
+                        'title': os.path.basename(json_path),  # e.g., submission_2023-10-01T12-00-00.json
+                        'parents': [{'id': DRIVE_FOLDER_ID}]  # Upload to specific folder
+                    }
+                    upload_file = drive.CreateFile(file_metadata)
+                    upload_file.SetContentFile(json_path)
+                    upload_file.Upload()
+                    
+                    st.success(f"Data saved locally to CSV/JSON and uploaded to Google Drive as {file_metadata['title']}!")
                 except Exception as e:
-                    st.error(f"Error saving data: {str(e)}")
+                    st.error(f"Error saving/uploading data: {str(e)}")
                 
                 # Show success message and rerun to show results
                 st.success(T['success_msg'])
