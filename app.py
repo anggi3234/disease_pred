@@ -4,6 +4,10 @@ from typing import List, Optional
 import pandas as pd
 import numpy as np
 import math
+import csv
+import json
+import os
+from datetime import datetime
 
 # Set page config
 st.set_page_config(
@@ -956,108 +960,92 @@ def calculate_symptom_severity(health_data):
     return total_severity / len(symptoms)
 
 def calculate_framingham_risk_score(features):
-    """Enhanced Framingham Risk Score for CVD with HbA1c, Waist Circumference, and Fasting Glucose"""
+    """Simplified Framingham 10-year CVD risk based on specified factors (without SBP)"""
     age = features['age']
     is_male = features['gender_male']
     total_chol = features['total_cholesterol']
-    smoking = features['smoking_risk']
-    bp_meds = features['bp_medication']
-    hba1c = features['hba1c']
-    waist = features['waist_circumference']
-    fasting_glucose = features['fasting_glucose']
-    
-    # Simplified Framingham calculation
-    risk_score = 0
-    
-    # Age points
+    treated_bp = features['bp_medication'] > 0  # Treated if on meds (routine or not)
+    smoking = features['smoking_risk'] > 0.5  # Active smoker
+    diabetes = (features['hba1c'] >= 6.5 or features['fasting_glucose'] >= 126 or features['has_diabetes'])
+
+    # Points system adapted from Framingham (simplified; no SBP/HDL; use BP meds as proxy)
+    points = 0
+
+    # Age points (male/female specific) - Slightly increased to compensate for no SBP
     if is_male:
-        if age >= 70: risk_score += 11
-        elif age >= 65: risk_score += 10
-        elif age >= 60: risk_score += 8
-        elif age >= 55: risk_score += 6
-        elif age >= 50: risk_score += 4
-        elif age >= 45: risk_score += 3
-        elif age >= 40: risk_score += 2
-        elif age >= 35: risk_score += 1
-    else:  # Female
-        if age >= 75: risk_score += 16
-        elif age >= 70: risk_score += 12
-        elif age >= 65: risk_score += 9
-        elif age >= 60: risk_score += 7
-        elif age >= 55: risk_score += 4
-        elif age >= 50: risk_score += 3
-        elif age >= 45: risk_score += 2
-        elif age >= 40: risk_score += 1
-    
-    # Cholesterol points
-    if total_chol >= 280:
-        risk_score += 3 if is_male else 4
-    elif total_chol >= 240:
-        risk_score += 2 if is_male else 2
-    elif total_chol >= 200:
-        risk_score += 1 if is_male else 1
-    
-    # Smoking
-    if smoking > 0.5:  # Active smoker
-        risk_score += 4 if is_male else 3
-    
-    # BP medication
-    if bp_meds > 0.5:
-        risk_score += 2
-    
-    # Enhanced features based on AHA guidelines
-    # HbA1c contribution (diabetes is a major CVD risk factor)
-    if hba1c >= 6.5:  # Diabetes range
-        risk_score += 3
-    elif hba1c >= 5.7:  # Prediabetes range
-        risk_score += 1
-    
-    # Waist circumference (central obesity)
-    if waist > 0:  # Only if measured
-        if is_male and waist >= 102:  # Male threshold
-            risk_score += 2
-        elif not is_male and waist >= 88:  # Female threshold
-            risk_score += 2
-        elif (is_male and waist >= 94) or (not is_male and waist >= 80):  # Elevated risk
-            risk_score += 1
-    
-    # Fasting glucose
-    if fasting_glucose >= 126:  # Diabetes range
-        risk_score += 2
-    elif fasting_glucose >= 100:  # Prediabetes range     
-        risk_score += 1
-    
-    # Convert to probability (adjusted for enhanced scoring)
-    probability = min(risk_score / 25.0, 1.0)  # Adjusted denominator for new factors
-    return probability
+        if age < 35: points += -8
+        elif age <= 39: points += -3
+        elif age <= 44: points += 1
+        elif age <= 49: points += 4
+        elif age <= 54: points += 7
+        elif age <= 59: points += 9
+        elif age <= 64: points += 11
+        elif age <= 69: points += 12
+        elif age <= 74: points += 13
+        else: points += 14
+    else:
+        if age < 35: points += -6
+        elif age <= 39: points += -2
+        elif age <= 44: points += 1
+        elif age <= 49: points += 4
+        elif age <= 54: points += 7
+        elif age <= 59: points += 9
+        elif age <= 64: points += 11
+        elif age <= 69: points += 13
+        elif age <= 74: points += 15
+        else: points += 17
+
+    # Total Cholesterol points (age-adjusted, simplified) - Slightly increased
+    if total_chol < 160: chol_points = 0
+    elif total_chol < 200: chol_points = 2
+    elif total_chol < 240: chol_points = 3
+    elif total_chol < 280: chol_points = 4
+    else: chol_points = 5
+    if age >= 70: chol_points -= 1  # Adjust for older age
+    points += chol_points
+
+    # BP meds as proxy for hypertension (increased weight without direct SBP)
+    if treated_bp:
+        points += 4  # Higher penalty assuming treatment indicates elevated BP
+
+    # Smoking: +3 if smoker (increased from 2 to compensate)
+    if smoking: points += 3
+
+    # Diabetes: +3 if present (increased from 2)
+    if diabetes: points += 3
+
+    # Convert points to approximate 10-year risk % (using exponential approximation for realism)
+    import math
+    risk = 1 - math.exp(-0.06 * (points + 8))  # Adjusted to give ~3-7% base for young/healthy, caps at ~80%
+    return max(0.01, min(risk, 0.99))  # Ensure no 0% or 100%
 
 def calculate_risk_scores(features):
     """Calculate risk scores for different health aspects with adjusted cutoffs"""
     risk_scores = {}
     
-    # Metabolic and Lifestyle Risk - Adjusted to increase moderate/high risk
+    # Metabolic and Lifestyle Risk - Adjusted to reduce default to ~46%
     metabolic_risk = (
-        0.25 * max(0, (features['bmi'] - 18.5) / (28 - 18.5)) +  # Lower BMI threshold
-        0.2 * (1 - min(features['met_hours'] / 35, 1)) +  # Lower MET threshold
-        0.2 * features['stress_score'] +
+        0.22 * max(0, (features['bmi'] - 18.5) / (32 - 18.5)) +  # Slightly lowered weight
+        0.18 * (1 - min(features['met_hours'] / 35, 1)) +  # Slightly lowered
+        0.18 * features['stress_score'] +  # Slightly lowered
         0.15 * features['smoking_risk'] +
         0.1 * features['alcohol_risk'] +
         0.1 * (1 - features['sleep_score'])
     )
-    # Apply multiplier to increase scores
-    metabolic_risk = min(metabolic_risk * 1.3, 1.0)
-    risk_scores['metabolic_lifestyle'] = max(0, min(1, metabolic_risk))
+    # Reduced multiplier
+    metabolic_risk = min(metabolic_risk * 1.15, 1.0)
+    risk_scores['metabolic_lifestyle'] = max(0.01, min(0.99, metabolic_risk))  # Avoid extremes
     
-    # CVD & Stroke Risk (Enhanced Framingham-based)
+    # CVD & Stroke Risk (Revamped Framingham-based without SBP)
     if not features['has_cvd']:
         cvd_risk = calculate_framingham_risk_score(features)
         # Add family history
         cvd_risk += features['cvd_family_history'] * 0.08
-        # Apply multiplier to increase scores
+        # Apply multiplier
         cvd_risk = min(cvd_risk * 1.2, 1.0)
-        risk_scores['cvd_stroke'] = max(0, min(1, cvd_risk))
+        risk_scores['cvd_stroke'] = max(0.01, min(0.99, cvd_risk))
     
-    # Diabetes Risk - Adjusted to increase moderate/high risk
+    # Diabetes Risk - Unchanged from previous adjustment
     if not features['has_diabetes']:
         # Adjust waist circumference if zero
         waist_adj = features['waist_circumference'] if features['waist_circumference'] > 0 else 80
@@ -1065,17 +1053,17 @@ def calculate_risk_scores(features):
         diabetes_risk = (
             0.25 * max(0, (features['bmi'] - 18.5) / (32 - 18.5)) +  # Lower BMI threshold
             0.2 * max(0, (waist_adj - 65) / (110 - 65)) +  # Lower waist threshold
-            0.15 * (1 if features['hba1c'] >= 5.7 else features['hba1c'] / 5.7) +  # Lower HbA1c threshold
-            0.15 * (1 if features['fasting_glucose'] > 100 else features['fasting_glucose'] / 100) +  # Lower glucose threshold
+            0.15 * min(max( (features['hba1c'] - 4.5) / (6.5 - 4.5), 0), 1) +  # Adjusted continuous scaling for HbA1c
+            0.15 * min(max( (features['fasting_glucose'] - 70) / (126 - 70), 0), 1) +  # Adjusted continuous scaling for glucose
             0.1 * (1 - min(features['met_hours'] / 35, 1)) +
             0.05 * features['diabetes_family_history'] * 0.1 +
             0.1 * features['diabetes_symptoms']
         )
         # Apply multiplier to increase scores
         diabetes_risk = min(diabetes_risk * 1.25, 1.0)
-        risk_scores['diabetes'] = max(0, min(1, diabetes_risk))
+        risk_scores['diabetes'] = max(0.01, min(0.99, diabetes_risk))
     
-    # Cancer Risk - Adjusted to increase moderate/high risk
+    # Cancer Risk - Minor adjustment to avoid 0%
     if not features['has_cancer']:
         cancer_risk = (
             0.3 * (features['age'] - 18) / (75 - 18) +  # Lower age threshold
@@ -1086,9 +1074,10 @@ def calculate_risk_scores(features):
         )
         # Apply multiplier to increase scores
         cancer_risk = min(cancer_risk * 1.2, 1.0)
-        risk_scores['cancer'] = max(0, min(1, cancer_risk))
+        risk_scores['cancer'] = max(0.01, min(0.99, cancer_risk))
     
     return risk_scores
+
 
 def generate_recommendations(risk_scores, features):
     """Generate personalized recommendations based on risk assessment"""
@@ -1275,7 +1264,7 @@ def main():
         risk_scores = calculate_risk_scores(features)
         recommendations = generate_recommendations(risk_scores, features)
         display_results(risk_scores, recommendations)
-        
+    
     else:
         # Show questionnaire form
         st.header(T['form_title'])
@@ -1293,19 +1282,157 @@ def main():
             
             if submitted:
                 # Store the collected data
-                st.session_state.questionnaire_data = {
+                questionnaire_data = {
                     'personal': personal_data,
                     'activity': activity_data,
                     'lifestyle': lifestyle_data,
                     'health': health_data,
-                    'genetic': genetic_data
+                    'genetic': genetic_data,
+                    'timestamp': datetime.now().isoformat()  # Add timestamp for uniqueness
                 }
+                st.session_state.questionnaire_data = questionnaire_data
                 st.session_state.show_results = True
+                
+                # New: Save to local files
+                try:
+                    # Create submissions directory if it doesn't exist
+                    os.makedirs('submissions', exist_ok=True)
+                    
+                    # Compute features and risk scores (moved here for CSV inclusion)
+                    features = process_questionnaire_data(questionnaire_data)
+                    risk_scores = calculate_risk_scores(features)
+                    
+                    # Flatten all data for CSV
+                    flat_data = {
+                        'timestamp': questionnaire_data['timestamp'],
+                        # Personal section
+                        'name': questionnaire_data['personal']['name'],
+                        'phone': questionnaire_data['personal']['phone'],
+                        'age': questionnaire_data['personal']['age'],
+                        'sex': questionnaire_data['personal']['sex'],
+                        'height': questionnaire_data['personal']['height'],
+                        'weight': questionnaire_data['personal']['weight'],
+                        'occupation': questionnaire_data['personal']['occupation'],
+                        'activity_level': questionnaire_data['personal']['activity_level'],
+                        'waist_circumference': questionnaire_data['personal']['waist_circumference'],
+                        # Activity section
+                        'exercise_frequency': questionnaire_data['activity']['exercise_frequency'],
+                        'duration': questionnaire_data['activity']['duration'],
+                        'intensity': questionnaire_data['activity']['intensity'],
+                        # Lifestyle section
+                        'sleep_hours': questionnaire_data['lifestyle']['sleep_hours'],
+                        'stress_level': questionnaire_data['lifestyle']['stress_level'],
+                        'smoking': questionnaire_data['lifestyle']['smoking'],
+                        'alcohol': questionnaire_data['lifestyle']['alcohol'],
+                        'total_cholesterol': questionnaire_data['lifestyle']['total_cholesterol'],
+                        'blood_pressure_medication': questionnaire_data['lifestyle']['blood_pressure_medication'],
+                        'hba1c': questionnaire_data['lifestyle']['hba1c'],
+                        'fasting_glucose': questionnaire_data['lifestyle']['fasting_glucose'],
+                        'frequent_hunger': questionnaire_data['lifestyle']['frequent_hunger'],
+                        'frequent_thirst': questionnaire_data['lifestyle']['frequent_thirst'],
+                        'frequent_urination': questionnaire_data['lifestyle']['frequent_urination'],
+                        # Health section
+                        'conditions': ','.join(questionnaire_data['health']['conditions']),  # Join list as comma-separated string
+                        'medications': questionnaire_data['health']['medications'],
+                        'diabetes_history': questionnaire_data['health']['diabetes_history'],
+                        'cancer_history': questionnaire_data['health']['cancer_history'],
+                        'cvd_history': questionnaire_data['health']['cvd_history'],
+                        # Symptoms (flattened from dict)
+                        'symptom_fatigue': questionnaire_data['health']['symptoms']['fatigue'],
+                        'symptom_joint_pain': questionnaire_data['health']['symptoms']['joint_pain'],
+                        'symptom_digestive': questionnaire_data['health']['symptoms']['digestive'],
+                        'symptom_skin_issues': questionnaire_data['health']['symptoms']['skin_issues'],
+                        'symptom_headaches': questionnaire_data['health']['symptoms']['headaches'],
+                        'symptom_mood': questionnaire_data['health']['symptoms']['mood'],
+                        'symptom_cognitive': questionnaire_data['health']['symptoms']['cognitive'],
+                        'symptom_sleep_issues': questionnaire_data['health']['symptoms']['sleep_issues'],
+                        # Genetic section
+                        'had_testing': questionnaire_data['genetic']['had_testing'],
+                        'findings': questionnaire_data['genetic']['findings'],
+                        # Calculated BMI (optional, but included as per original)
+                        'bmi': questionnaire_data['personal']['weight'] / ((questionnaire_data['personal']['height']/100) ** 2) if questionnaire_data['personal']['height'] > 0 else 0,
+                        # New: Risk scores as percentages (N/A if not calculated, e.g., due to existing condition)
+                        'metabolic_risk': round(risk_scores.get('metabolic_lifestyle', 0) * 100, 1) if 'metabolic_lifestyle' in risk_scores else 'N/A',
+                        'cvd_risk': round(risk_scores.get('cvd_stroke', 0) * 100, 1) if 'cvd_stroke' in risk_scores else 'N/A',
+                        'diabetes_risk': round(risk_scores.get('diabetes', 0) * 100, 1) if 'diabetes' in risk_scores else 'N/A',
+                        'cancer_risk': round(risk_scores.get('cancer', 0) * 100, 1) if 'cancer' in risk_scores else 'N/A'
+                    }
+                    
+                    # Save to CSV (append mode)
+                    csv_path = 'submissions/submissions.csv'
+                    file_exists = os.path.isfile(csv_path)
+                    with open(csv_path, 'a', newline='') as csvfile:
+                        writer = csv.DictWriter(csvfile, fieldnames=flat_data.keys())
+                        if not file_exists:
+                            writer.writeheader()  # Write header only once
+                        writer.writerow(flat_data)
+                    
+                    # Save to JSON (new file per submission) - unchanged, saves full nested data
+                    json_path = f'submissions/submission_{questionnaire_data["timestamp"].replace(":", "-")}.json'
+                    with open(json_path, 'w') as jsonfile:
+                        json.dump(questionnaire_data, jsonfile, indent=4)
+                    
+                    st.success("Data saved locally to CSV and JSON!")
+                except Exception as e:
+                    st.error(f"Error saving data: {str(e)}")
                 
                 # Show success message and rerun to show results
                 st.success(T['success_msg'])
                 st.balloons()
                 st.rerun()
+
+
+# def main():
+#     # Initialize session state
+#     if 'show_results' not in st.session_state:
+#         st.session_state.show_results = False
+    
+#     # Check if results should be shown and auto-select Results tab
+#     if st.session_state.show_results:
+#         # Show results directly without tabs when calculation is complete
+#         st.header(T['results_title'])
+        
+#         # Add a button to go back to questionnaire
+#         if st.button(T['back_button']):
+#             st.session_state.show_results = False
+#             st.rerun()
+        
+#         # Process and display results
+#         features = process_questionnaire_data(st.session_state.questionnaire_data)
+#         risk_scores = calculate_risk_scores(features)
+#         recommendations = generate_recommendations(risk_scores, features)
+#         display_results(risk_scores, recommendations)
+        
+#     else:
+#         # Show questionnaire form
+#         st.header(T['form_title'])
+        
+#         with st.form("health_questionnaire"):
+#             # Collect data from each section
+#             personal_data = personal_info_section()
+#             activity_data = physical_activity_section()
+#             lifestyle_data = lifestyle_section()
+#             health_data = health_conditions_section()
+#             genetic_data = genetic_testing_section()
+            
+#             # Submit button
+#             submitted = st.form_submit_button(T['submit_button'], icon=":material/check_circle:")
+            
+#             if submitted:
+#                 # Store the collected data
+#                 st.session_state.questionnaire_data = {
+#                     'personal': personal_data,
+#                     'activity': activity_data,
+#                     'lifestyle': lifestyle_data,
+#                     'health': health_data,
+#                     'genetic': genetic_data
+#                 }
+#                 st.session_state.show_results = True
+                
+#                 # Show success message and rerun to show results
+#                 st.success(T['success_msg'])
+#                 st.balloons()
+#                 st.rerun()
 
 if __name__ == "__main__":
     main()
