@@ -1,5 +1,5 @@
 import streamlit as st
-from pydantic import BaseModel
+# from pydantic import BaseModel - This import is not used
 from typing import List, Optional
 import pandas as pd
 import numpy as np
@@ -8,11 +8,9 @@ import csv
 import json
 import os
 from datetime import datetime
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
-import io
-from google.oauth2.service_account import Credentials
-
+# Removed unused pydrive2 and io imports
+from oauth2client.service_account import ServiceAccountCredentials
+import gspread
 
 
 # Set page config
@@ -1250,6 +1248,8 @@ def display_results(risk_scores, recommendations):
             st.markdown(T['contact_whatsapp'])
 
 DRIVE_FOLDER_ID = '1NrnIvAUszGLMahXanXjgLQ9u0_0oshDZ' 
+GOOGLE_SHEET_ID = '13M-qFhz9qVdvgoSu2iRuYBkBaWzqYZaUy9BZzl32eAQ'
+#https://docs.google.com/spreadsheets/d/13M-qFhz9qVdvgoSu2iRuYBkBaWzqYZaUy9BZzl32eAQ/edit?gid=0#gid=0
 
 # Main app flow
 def main():
@@ -1380,64 +1380,114 @@ def main():
                     with open(json_path, 'w') as jsonfile:
                         json.dump(questionnaire_data, jsonfile, indent=4)
                     
+                     # --- NEW: Append data to Google Sheets ---
+                    print("DEBUG: Starting Google Sheets authentication...")
+                    
+                    scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+                    
+                    # Check for local credentials file FIRST
+                    if os.path.exists('dnacare.json'):
+                        print("DEBUG: Using local file 'dnacare.json' for credentials.")
+                        creds = ServiceAccountCredentials.from_json_keyfile_name('dnacare.json', scopes)
+                    # If no local file, check for Streamlit secrets (for deployment)
+                    elif 'GOOGLE_CREDENTIALS' in st.secrets:
+                        print("DEBUG: Using Streamlit secrets for credentials.")
+                        creds_dict = json.loads(st.secrets['GOOGLE_CREDENTIALS'])
+                        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scopes)
+                    # If neither is found, raise an error
+                    else:
+                        raise FileNotFoundError("Could not find 'dnacare.json' for local development or GOOGLE_CREDENTIALS secret for deployment.")
+
+                    client = gspread.authorize(creds)
+                    print("DEBUG: Authentication successful.")
+                    
+                    spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
+                    worksheet = spreadsheet.sheet1
+                    print(f"DEBUG: Opened worksheet '{worksheet.title}'.")
+                    
+                    if not worksheet.row_values(1):
+                        worksheet.append_row(list(flat_data.keys()))
+                        print("DEBUG: Added header row to empty sheet.")
+                    
+                    worksheet.append_row(list(flat_data.values()))
+                    print("DEBUG: Appended new row to Google Sheet.")
+                    
+                    # On success, set state and rerun to show results
+                    st.session_state.show_results = True
+                    st.success(T['success_msg'])
+                    st.balloons()
+                    st.rerun()
+                
+                except Exception as e:
+                    # On error, this message will now stay on the screen
+                    st.error(f"An error occurred: {str(e)}")
+                    # Ensure we don't try to show results on failure
+                    st.session_state.show_results = False
+                    
                     # New: Upload JSON to Google Drive using service account
                     # Set up authentication
-                    gauth = GoogleAuth()
-                    print("DEBUG: Starting authentication...")  # Will show in runtime logs
+                #     gauth = GoogleAuth()
+                #     print("DEBUG: Starting authentication...")  # Will show in runtime logs
                     
-                    local_credentials_file = 'dnacare.json'
-                    if os.path.exists(local_credentials_file):  # Prefer local file if it exists (for testing)
-                        print("DEBUG: Local credentials file found - using local loading")
-                        try:
-                            gauth.credentials = Credentials.from_service_account_file(
-                                local_credentials_file,
-                                scopes=['https://www.googleapis.com/auth/drive']
-                            )
-                            print("DEBUG: Local credentials loaded successfully")
-                        except Exception as local_auth_err:
-                            print(f"DEBUG: Local credentials loading failed: {str(local_auth_err)}")
-                            raise
-                    elif 'GOOGLE_CREDENTIALS' in st.secrets:  # For Streamlit Cloud deployment
-                        print("DEBUG: Using Streamlit secrets for credentials")
-                        try:
-                            credentials_dict = json.loads(st.secrets['GOOGLE_CREDENTIALS'])
-                            gauth.credentials = Credentials.from_service_account_info(
-                                credentials_dict,
-                                scopes=['https://www.googleapis.com/auth/drive']
-                            )
-                            print("DEBUG: Credentials loaded from secrets successfully")
-                        except Exception as auth_err:
-                            print(f"DEBUG: Secrets loading failed: {str(auth_err)}")
-                            raise  # Re-raise to catch in outer except
-                    else:
-                        raise ValueError("DEBUG: No credentials found - place 'dnacare.json' locally or set secrets for deployment")
+                #     local_credentials_file = 'dnacare.json'
+                #     if os.path.exists(local_credentials_file):  # Prefer local file if it exists (for testing)
+                #         print("DEBUG: Local credentials file found - using local loading")
+                #         try:
+                #             gauth.credentials = ServiceAccountCredentials.from_json_keyfile_name(
+                #                 local_credentials_file,
+                #                 scopes=['https://www.googleapis.com/auth/drive']
+                #             )
+                #             print("DEBUG: Local credentials loaded successfully")
+                #         except Exception as local_auth_err:
+                #             print(f"DEBUG: Local credentials loading failed: {str(local_auth_err)}")
+                #             raise
+                #     elif 'GOOGLE_CREDENTIALS' in st.secrets:  # For Streamlit Cloud deployment
+                #         print("DEBUG: Using Streamlit secrets for credentials")
+                #         try:
+                #             credentials_dict = json.loads(st.secrets['GOOGLE_CREDENTIALS'])
+                #             gauth.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+                #                 credentials_dict,
+                #                 scopes=['https://www.googleapis.com/auth/drive']
+                #             )
+                #             print("DEBUG: Credentials loaded from secrets successfully")
+                #         except Exception as auth_err:
+                #             print(f"DEBUG: Secrets loading failed: {str(auth_err)}")
+                #             raise  # Re-raise to catch in outer except
+                #     else:
+                #         raise ValueError("DEBUG: No credentials found - place 'dnacare.json' locally or set secrets for deployment")
                     
-                    if gauth.credentials is None:
-                        raise ValueError("DEBUG: Authentication failed - credentials are None")
+                #     if gauth.credentials is None:
+                #         raise ValueError("DEBUG: Authentication failed - credentials are None")
                     
-                    print("DEBUG: Creating GoogleDrive instance")
-                    drive = GoogleDrive(gauth)
+                #     print("DEBUG: Creating GoogleDrive instance")
+                #     drive = GoogleDrive(gauth)
                     
-                    print("DEBUG: Preparing file metadata")
-                    file_metadata = {
-                        'title': os.path.basename(json_path),  # e.g., submission_2023-10-01T12-00-00.json
-                        'parents': [{'id': DRIVE_FOLDER_ID}]  # Upload to specific folder
-                    }
-                    upload_file = drive.CreateFile(file_metadata)
-                    upload_file.SetContentFile(json_path)
+                #     print("DEBUG: Preparing file metadata")
+                #     file_metadata = {
+                #         'title': os.path.basename(json_path),  # e.g., submission_2023-10-01T12-00-00.json
+                #         'parents': [{'id': DRIVE_FOLDER_ID}],  # Upload to specific folder
+                #         'driveId': DRIVE_FOLDER_ID
+                #     }
+                #     upload_file = drive.CreateFile(file_metadata)
+                #     upload_file.metadata['supportsAllDrives'] = True 
+                #     upload_file.SetContentFile(json_path)
                     
-                    print(f"DEBUG: Uploading file: {json_path}")
-                    upload_file.Upload()
-                    print("DEBUG: Upload completed successfully")
+                #     print(f"DEBUG: Uploading file: {json_path}")
+                #     try:
+                #         upload_file.Upload()
+                #         print("DEBUG: Upload completed successfully")
+                #     except Exception as upload_err:
+                #         print(f"DEBUG: Upload failed: {str(upload_err)}")
+                #         raise  # Re-raise to show in st.error
                     
-                    st.success(f"Data saved locally to CSV/JSON and uploaded to Google Drive as {file_metadata['title']}!")
-                except Exception as e:
-                    st.error(f"Error saving/uploading data: {str(e)}")
+                #     st.success(f"Data saved locally to CSV/JSON and uploaded to Google Drive as {file_metadata['title']}!")
+                # except Exception as e:
+                #     st.error(f"Error saving/uploading data: {str(e)}")
                 
-                # Show success message and rerun to show results
-                st.success(T['success_msg'])
-                st.balloons()
-                st.rerun()
+                # # Show success message and rerun to show results
+                # st.success(T['success_msg'])
+                # st.balloons()
+                # st.rerun()
 
 
 # def main():
