@@ -1392,7 +1392,8 @@ def main():
                     # If no local file, check for Streamlit secrets (for deployment)
                     elif 'GOOGLE_CREDENTIALS' in st.secrets:
                         print("DEBUG: Using Streamlit secrets for credentials.")
-                        creds_dict = json.loads(st.secrets['GOOGLE_CREDENTIALS'])
+                        #creds_dict = json.loads(st.secrets['GOOGLE_CREDENTIALS'])
+                        creds_dict = st.secrets['GOOGLE_CREDENTIALS']
                         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scopes)
                     # If neither is found, raise an error
                     else:
