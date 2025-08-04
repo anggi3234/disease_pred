@@ -125,6 +125,7 @@ LANG = {
         'promo_button': "🎁 Promo",
         'inquiry_button': "📞 Inquiry",
         'contact_whatsapp': "[WhatsApp Customer Relations](https://wa.me/your_whatsapp_number)",
+        'check_promo': "✨ More Information ✨",
 
         # Success message for low risk
         'low_risk_success': "🎉 Great news! All your risk levels are in the low range. Keep maintaining your healthy lifestyle!",
@@ -132,7 +133,11 @@ LANG = {
         'maintain_habits': "Continue your current healthy habits",
         'regular_checkups': "Regular preventive health check-ups",
         'stay_active': "Stay active and maintain balanced nutrition",
-        'monitor_changes': "Monitor any changes in your health status"
+        'monitor_changes': "Monitor any changes in your health status",
+
+        # Mandatory changes and fields
+        'monitor_changes': "Monitor any changes in your health status",
+        'mandatory_fields_error': "Please fill in the following mandatory fields: {fields}"
     },
 
     'id': {
@@ -238,6 +243,7 @@ LANG = {
         'promo_button': "🎁 Promo",
         'inquiry_button': "📞 Tanya",
         'contact_whatsapp': "[WhatsApp Customer Relations](https://wa.me/your_whatsapp_number)",
+        'check_promo': "✨ Informasi Lebih Lanjut ✨",
 
         # Success message for low risk
         'low_risk_success': "🎉 Kabar baik! Semua tingkat risiko Anda dalam kategori rendah. Terus pertahankan gaya hidup sehat Anda!",
@@ -245,7 +251,11 @@ LANG = {
         'maintain_habits': "Lanjutkan kebiasaan sehat Anda saat ini",
         'regular_checkups': "Pemeriksaan kesehatan preventif secara rutin",
         'stay_active': "Tetap aktif dan jaga nutrisi seimbang",
-        'monitor_changes': "Pantau perubahan pada status kesehatan Anda"
+        'monitor_changes': "Pantau perubahan pada status kesehatan Anda",
+
+        # Mandatory changes and mandatory fields
+        'monitor_changes': "Pantau perubahan pada status kesehatan Anda",
+        'mandatory_fields_error': "Harap isi bidang wajib berikut: {fields}"
     }
 }
 
@@ -497,6 +507,15 @@ intensity_map_help = {
     "id": "Ringan: Dapat berbicara dan mengatur pernapasan dengan mudah; Sedang: Dapat berbicara tetapi pernapasan meningkat; Berat: Sulit berbicara; Sangat berat: Tidak dapat mempertahankan percakapan"
 }
 
+WHATSAPP_LINKS = {
+    "metabolic": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20tinggi%20atau%20menengah%20untuk%20penyakit%20metabolik%20dan%20gaya%20hidup.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20Genme%20Life%3F",
+    "diabetes": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20tinggi%20atau%20menengah%20untuk%20penyakit%20diabetes.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20Medical%20Check%20Up%3F",
+    "cvd": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20tinggi%20atau%20menengah%20untuk%20penyakit%20kardiovaskular.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20StrokeGENME%3F",
+    "cancer": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20menengah%20untuk%20penyakit%20kanker.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20KalScreen%3F",
+    "cancer_high_risk": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20tinggi%20%20untuk%20penyakit%20kanker.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20SpotMas%3F"
+}
+
+
 
 RECOMMENDATIONS = {
     "metabolic": {
@@ -614,13 +633,13 @@ def personal_info_section():
     with col1:
         name = st.text_input(T['name'])
         sex = st.selectbox(T['sex'], T['sex_options'])
-        age = st.number_input(T['age'], min_value=0, max_value=120, value=30)
+        age = st.number_input(T['age'], min_value=0, max_value=120)
         phone = st.text_input(T['phone'])
-        waist_circumference = st.number_input(T['waist'], min_value=0, max_value=200, value=80)
+        waist_circumference = st.number_input(T['waist'], min_value=0, max_value=200)
     
     with col2:
-        height = st.number_input(T['height'], min_value=0, max_value=300, value=170)
-        weight = st.number_input(T['weight'], min_value=0, max_value=500, value=70)
+        height = st.number_input(T['height'], min_value=0, max_value=300)
+        weight = st.number_input(T['weight'], min_value=0, max_value=500)
         occupation = st.text_input(T['occupation'])
         activity_level = st.selectbox(T['activity_level'], T['activity_options'])
     
@@ -1138,7 +1157,7 @@ def generate_recommendations(risk_scores, features):
     
     return recommendations
 
-def display_results(risk_scores, recommendations):
+def display_results(risk_scores, recommendations, features):
     """Display risk scores and recommendations"""
     st.header(T['result_header'])
     st.write(T['result_subtext'])
@@ -1205,26 +1224,45 @@ def display_results(risk_scores, recommendations):
                         break
                 
                 # Simple logic for image display
+                 # Logic for image display and CTA link based on risk category
                 image_path = 'assets/MCU.jpg'  # Default
                 caption = "General Health Screening"
+                whatsapp_link = WHATSAPP_LINKS['metabolic'] # Default link
                 
                 if risk_key == 'diabetes':
                     image_path = 'assets/MCU.jpg'
                     caption = "MCU Health Screening" if st.session_state.lang == 'en' else "MCU – Pemeriksaan Kesehatan"
+                    whatsapp_link = WHATSAPP_LINKS['diabetes']
                 elif risk_key == 'cvd_stroke':
                     image_path = 'assets/StrokeGENME.png'
                     caption = "StrokeGENME - CVD Prevention" if st.session_state.lang == 'en' else "StrokeGENME – Pencegahan Penyakit Jantung"
+                    whatsapp_link = WHATSAPP_LINKS['cvd']
                 elif risk_key == 'cancer':
-                    image_path = 'assets/Kalscanner69.png'
-                    caption = "Kalscanner69 - Cancer Screening" if st.session_state.lang == 'en' else "Kalscanner69 – Deteksi Kanker"
+                    # Conditional logic for cancer based on risk and age
+                    is_high_risk = risk_scores.get('cancer', 0) > 0.5
+                    is_older = features['age'] > 40
+                    if is_high_risk and is_older:
+                        image_path = 'assets/spotmas.jpeg'
+                        caption = "SpotMas - High Risk Cancer Screening" if st.session_state.lang == 'en' else "SpotMas – Skrining Kanker Risiko Tinggi"
+                        whatsapp_link = WHATSAPP_LINKS['cancer_high_risk']
+                    else:
+                        image_path = 'assets/Kalscanner69.png'
+                        caption = "Kalscanner69 - Cancer Screening" if st.session_state.lang == 'en' else "Kalscanner69 – Deteksi Kanker"
+                        whatsapp_link = WHATSAPP_LINKS['cancer']
                 elif risk_key == 'metabolic_lifestyle': 
                     image_path = 'assets/GENME_LIFE.png'
                     caption = "GENME Life - Metabolic Health" if st.session_state.lang == 'en' else "GENME Life – Kesehatan Metabolik"
+                    whatsapp_link = WHATSAPP_LINKS['metabolic']
                 
                 try:
                     st.image(image_path, caption=caption, use_container_width=True)
                 except:
                     st.error(f"Image not found: {image_path}")
+                
+                # Add CTA button for each recommendation category
+                # if st.button(T['check_promo'], key=f"promo_{risk_key}", use_container_width=True):
+                #     st.markdown(T['contact_whatsapp'])
+                st.link_button(T['check_promo'], whatsapp_link, use_container_width=True)
             
             st.divider()
     else:
@@ -1271,7 +1309,7 @@ def main():
         features = process_questionnaire_data(st.session_state.questionnaire_data)
         risk_scores = calculate_risk_scores(features)
         recommendations = generate_recommendations(risk_scores, features)
-        display_results(risk_scores, recommendations)
+        display_results(risk_scores, recommendations, features)
     
     else:
         # Show questionnaire form
@@ -1289,17 +1327,49 @@ def main():
             submitted = st.form_submit_button(T['submit_button'], icon=":material/check_circle:")
             
             if submitted:
-                # Store the collected data
-                questionnaire_data = {
+                # # Store the collected data
+                # questionnaire_data = {
+                #     'personal': personal_data,
+                #     'activity': activity_data,
+                #     'lifestyle': lifestyle_data,
+                #     'health': health_data,
+                #     'genetic': genetic_data,
+                #     'timestamp': datetime.now().isoformat()  # Add timestamp for uniqueness
+                # }
+                # st.session_state.questionnaire_data = questionnaire_data
+                # st.session_state.show_results = True
+
+                error_messages = []
+                if not personal_data['name']:
+                    error_messages.append(T['name'])
+                # For number inputs, a value <= 0 is considered empty as we removed default values.
+                if personal_data['age'] <= 0:
+                    error_messages.append(T['age'])
+                if personal_data['waist_circumference'] <= 0:
+                    error_messages.append(T['waist'])
+                if personal_data['height'] <= 0:
+                    error_messages.append(T['height'])
+                if personal_data['weight'] <= 0:
+                    error_messages.append(T['weight'])
+
+                if error_messages:
+                    # Display a single error message with all missing fields.
+                    # A new translation key 'mandatory_fields_error' was added to the LANG dictionary.
+                    error_str = T['mandatory_fields_error'].format(fields=', '.join(error_messages))
+                    st.error(error_str)
+                else:
+                    # If validation passes, proceed with data processing and storage.
+                    # Store the collected data
+                    questionnaire_data = {
                     'personal': personal_data,
                     'activity': activity_data,
                     'lifestyle': lifestyle_data,
                     'health': health_data,
                     'genetic': genetic_data,
                     'timestamp': datetime.now().isoformat()  # Add timestamp for uniqueness
-                }
-                st.session_state.questionnaire_data = questionnaire_data
-                st.session_state.show_results = True
+                    }
+                    st.session_state.questionnaire_data = questionnaire_data
+                    st.session_state.show_results = True
                 
                 # New: Save to local files
                 try:

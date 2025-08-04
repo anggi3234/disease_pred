@@ -7,3 +7,5 @@ app v2.py
 dnacare.json
 submissions
 submissions/submissions.csv
+.streamlit/secrets.toml
+merged_cleaned_timestamp_bmi_end.csv
