@@ -1357,6 +1357,7 @@ def main():
                     # A new translation key 'mandatory_fields_error' was added to the LANG dictionary.
                     error_str = T['mandatory_fields_error'].format(fields=', '.join(error_messages))
                     st.error(error_str)
+                    return
                 else:
                     # If validation passes, proceed with data processing and storage.
                     # Store the collected data
@@ -1490,10 +1491,16 @@ def main():
                     st.rerun()
                 
                 except Exception as e:
-                    # On error, this message will now stay on the screen
-                    st.error(f"An error occurred: {str(e)}")
-                    # Ensure we don't try to show results on failure
-                    st.session_state.show_results = False
+                    # Show a user-friendly error message instead of technical details
+                    if st.session_state.lang == 'en':
+                        st.error("There was a problem saving your data. Please try again.")
+                    else:
+                        st.error("Terjadi masalah saat menyimpan data Anda. Silakan coba lagi.")
+                # except Exception as e:
+                #     # On error, this message will now stay on the screen
+                #     st.error(f"An error occurred: {str(e)}")
+                #     # Ensure we don't try to show results on failure
+                #     st.session_state.show_results = False
                     
                     # New: Upload JSON to Google Drive using service account
                     # Set up authentication
