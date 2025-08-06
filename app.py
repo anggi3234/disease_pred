@@ -114,7 +114,7 @@ LANG = {
 
         #submit
         'submit_button': "Calculate Risk Scores",
-
+        
         #recommendation
         'category_metabolic': "Metabolic & Lifestyle Risk",
         'category_cvd': "CVD & Stroke Risk",
@@ -1488,6 +1488,7 @@ def main():
                     st.session_state.show_results = True
                     st.success(T['success_msg'])
                     st.balloons()
+                    st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
                     st.rerun()
                 
                 except Exception as e:
