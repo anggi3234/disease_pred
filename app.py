@@ -1491,21 +1491,22 @@ def main():
                     st.components.v1.html("""
                     <script>
                     setTimeout(function() {
-                        // Try all scroll strategies for best compatibility
-                        window.scrollTo(0, 0); // Desktop instant
-                        window.scrollTo({top: 0, left: 0, behavior: 'smooth'}); // Mobile smooth
+                        // Desktop browsers: instant scroll
+                        window.scrollTo(0, 0);
+                        // Mobile browsers: smooth scroll
+                        window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
+                        // Also set scrollTop for body and document
                         document.body.scrollTop = 0;
                         document.documentElement.scrollTop = 0;
-                        // Try scrolling main Streamlit content into view
+                        // Try scrolling Streamlit's main content into view
                         var mainEl = document.querySelector('main');
                         if (mainEl) {
                             mainEl.scrollIntoView({behavior: 'auto', block: 'start'});
                         }
-                        // Try scrolling first child of body
-                        if (document.body.firstElementChild) {
-                            document.body.firstElementChild.scrollIntoView({behavior: 'auto', block: 'start'});
-                        }
-                    }, 100);
+                        // Try focusing the first input (sometimes helps on desktop)
+                        var firstInput = document.querySelector('input, textarea, select, button');
+                        if (firstInput) { firstInput.focus(); }
+                    }, 10); // Shorter delay for desktop
                     </script>
                     """, height=0)
                     st.rerun()
