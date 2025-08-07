@@ -1299,19 +1299,6 @@ def main():
     if st.session_state.show_results:
         # Show results directly without tabs when calculation is complete
         st.header(T['results_title'])
-        st.components.v1.html("""
-        <script>
-        setTimeout(function() {
-            window.scrollTo(0, 0);
-            document.body.scrollTop = 0;
-            document.documentElement.scrollTop = 0;
-            var mainEl = document.querySelector('main');
-            if (mainEl) {
-                mainEl.scrollIntoView({behavior: 'auto', block: 'start'});
-            }
-        }, 50);
-        </script>
-        """, height=0)
         
         # Add a button to go back to questionnaire
         if st.button(T['back_button']):
@@ -1498,15 +1485,12 @@ def main():
                     print("DEBUG: Appended new row to Google Sheet.")
                     
                     # On success, set state and rerun to show results
-                    # st.session_state.show_results = True
-                    # st.success(T['success_msg'])
-                    # st.balloons()
-                    if st.session_state.show_results:
-                        st.header(T['results_title'])
-                        st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
-                        st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
-                        st.rerun()
-                    
+                    st.session_state.show_results = True
+                    st.success(T['success_msg'])
+                    st.balloons()
+                    st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
+                    st.rerun()
+                
                 except Exception as e:
                     # Show a user-friendly error message instead of technical details
                     if st.session_state.lang == 'en':
