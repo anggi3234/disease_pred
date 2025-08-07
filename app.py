@@ -19,6 +19,7 @@ st.set_page_config(
     page_icon="🧬",
     layout="wide"
 )
+top_anchor = st.empty()
 
 # --- LANGUAGE DICTIONARY ---
 LANG = {
@@ -1298,32 +1299,12 @@ def main():
     # Check if results should be shown and auto-select Results tab
     if st.session_state.show_results:
             # Force scroll to top using a small JS block
+        top_anchor.markdown("<div></div>", unsafe_allow_html=True)
         st.components.v1.html("""
         <script>
-        (function() {
-            const KEY = 'scrolledToTopOnce';
-            if (sessionStorage.getItem(KEY)) return;
-
-            // Force scroll immediately
-            window.scrollTo(0, 0);
-
-            // Prevent Streamlit or browser from overriding scroll position
-            let counter = 0;
-            const maxAttempts = 30;
-
-            const interval = setInterval(() => {
-                window.scrollTo(0, 0);
-                counter += 1;
-                if (counter >= maxAttempts) {
-                    clearInterval(interval);
-                    sessionStorage.setItem(KEY, 'true');
-                }
-            }, 100); // Repeat every 100ms for ~3s total
-
-        })();
+        window.scrollTo({top: 0, behavior: 'auto'});
         </script>
         """, height=0)
-
 
         # Show results directly without tabs when calculation is complete
         st.header(T['results_title'])
