@@ -1298,8 +1298,20 @@ def main():
     # Check if results should be shown and auto-select Results tab
     if st.session_state.show_results:
         # Show results directly without tabs when calculation is complete
-        st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
         st.header(T['results_title'])
+        st.components.v1.html("""
+        <script>
+        setTimeout(function() {
+            window.scrollTo(0, 0);
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+            var mainEl = document.querySelector('main');
+            if (mainEl) {
+                mainEl.scrollIntoView({behavior: 'auto', block: 'start'});
+            }
+        }, 50);
+        </script>
+        """, height=0)
         
         # Add a button to go back to questionnaire
         if st.button(T['back_button']):
