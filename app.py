@@ -19,7 +19,6 @@ st.set_page_config(
     page_icon="🧬",
     layout="wide"
 )
-top_anchor = st.empty()
 
 # --- LANGUAGE DICTIONARY ---
 LANG = {
@@ -1299,13 +1298,7 @@ def main():
     # Check if results should be shown and auto-select Results tab
     if st.session_state.show_results:
             # Force scroll to top using a small JS block
-        top_anchor.markdown("<div></div>", unsafe_allow_html=True)
-        st.components.v1.html("""
-        <script>
-        window.scrollTo({top: 0, behavior: 'auto'});
-        </script>
-        """, height=0)
-
+        st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
         # Show results directly without tabs when calculation is complete
         st.header(T['results_title'])
         
