@@ -1300,11 +1300,10 @@ def main():
             # Force scroll to top using a small JS block
         st.components.v1.html("""
         <script>
-            window.addEventListener('load', function() {
-                setTimeout(function() {
-                    window.scrollTo({top: 0, behavior: 'smooth'});
-                }, 100);
-            });
+            // Scroll to top as soon as this script is inserted into the DOM
+            setTimeout(function() {
+                window.scrollTo({top: 0, behavior: 'auto'});
+            }, 0);
         </script>
         """, height=0)
         # Show results directly without tabs when calculation is complete
