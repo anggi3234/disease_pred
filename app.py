@@ -1299,12 +1299,37 @@ def main():
     if st.session_state.show_results:
             # Force scroll to top using a small JS block
         st.components.v1.html("""
-        <div style="position: fixed; top: 0;"></div>
         <script>
-            setTimeout(() => {
-                document.querySelector('body').scrollTop = 0;
-                document.documentElement.scrollTop = 0;
-            }, 0);
+            function scrollToTopAfterImagesLoad() {
+                const images = document.images;
+                let loadedCount = 0;
+                const total = images.length;
+
+                if (total === 0) {
+                    window.scrollTo({ top: 0, behavior: 'auto' });
+                    return;
+                }
+
+                for (let i = 0; i < total; i++) {
+                    if (images[i].complete) {
+                        loadedCount++;
+                    } else {
+                        images[i].addEventListener('load', () => {
+                            loadedCount++;
+                            if (loadedCount === total) {
+                                window.scrollTo({ top: 0, behavior: 'auto' });
+                            }
+                        });
+                    }
+                }
+
+                if (loadedCount === total) {
+                    window.scrollTo({ top: 0, behavior: 'auto' });
+                }
+            }
+
+            // Delay a bit to let Streamlit finish rendering
+            setTimeout(scrollToTopAfterImagesLoad, 300);
         </script>
         """, height=0)
         # Show results directly without tabs when calculation is complete
