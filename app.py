@@ -1300,40 +1300,59 @@ def main():
             # Force scroll to top using a small JS block
         st.components.v1.html("""
         <script>
-            (function(){
-                const SCROLL_KEY = 'scrolledToTopOnce';
-                if (sessionStorage.getItem(SCROLL_KEY)) return;
+        (function() {
+            const SCROLL_KEY = 'scrolledToTopOnce';
+            if (sessionStorage.getItem(SCROLL_KEY)) return;
 
-                function scrollToTop() {
-                    window.scrollTo({ top: 0, behavior: 'auto' });
-                    sessionStorage.setItem(SCROLL_KEY, 'true');
-                }
-
-                // Wait for all images to load
+            // Step 1: Wait for all images to load
+            function whenImagesLoaded(callback) {
                 const images = document.images;
-                let loadedCount = 0;
-
-                function checkAllLoaded() {
-                    loadedCount++;
-                    if (loadedCount === images.length) {
-                        // Give the DOM a moment to stabilize
-                        setTimeout(scrollToTop, 100);
-                    }
-                }
+                let loaded = 0;
 
                 if (images.length === 0) {
-                    setTimeout(scrollToTop, 100);
-                } else {
-                    for (let i = 0; i < images.length; i++) {
-                        if (images[i].complete) {
-                            checkAllLoaded();
-                        } else {
-                            images[i].addEventListener('load', checkAllLoaded);
-                            images[i].addEventListener('error', checkAllLoaded);
-                        }
+                    callback();
+                }
+
+                for (let i = 0; i < images.length; i++) {
+                    if (images[i].complete) {
+                        loaded++;
+                    } else {
+                        images[i].addEventListener('load', () => {
+                            loaded++;
+                            if (loaded === images.length) callback();
+                        });
+                        images[i].addEventListener('error', () => {
+                            loaded++;
+                            if (loaded === images.length) callback();
+                        });
                     }
                 }
-            })();
+
+                if (loaded === images.length) callback();
+            }
+
+            // Step 2: Observe layout stabilization
+            function waitForLayoutStabilization(callback) {
+                let timeout = null;
+                const observer = new ResizeObserver(() => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        observer.disconnect();
+                        callback();
+                    }, 250); // 250ms without DOM changes = stable
+                });
+
+                observer.observe(document.body);
+            }
+
+            // Step 3: Trigger scroll once everything is stable
+            whenImagesLoaded(() => {
+                waitForLayoutStabilization(() => {
+                    window.scrollTo({ top: 0, behavior: 'auto' });
+                    sessionStorage.setItem(SCROLL_KEY, 'true');
+                });
+            });
+        })();
         </script>
         """, height=0)
 
