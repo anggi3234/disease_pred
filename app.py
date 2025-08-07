@@ -1300,38 +1300,43 @@ def main():
             # Force scroll to top using a small JS block
         st.components.v1.html("""
         <script>
-            function scrollToTopAfterImagesLoad() {
-                const images = document.images;
-                let loadedCount = 0;
-                const total = images.length;
+            (function(){
+                const SCROLL_KEY = 'scrolledToTopOnce';
+                if (sessionStorage.getItem(SCROLL_KEY)) return;
 
-                if (total === 0) {
+                function scrollToTop() {
                     window.scrollTo({ top: 0, behavior: 'auto' });
-                    return;
+                    sessionStorage.setItem(SCROLL_KEY, 'true');
                 }
 
-                for (let i = 0; i < total; i++) {
-                    if (images[i].complete) {
-                        loadedCount++;
-                    } else {
-                        images[i].addEventListener('load', () => {
-                            loadedCount++;
-                            if (loadedCount === total) {
-                                window.scrollTo({ top: 0, behavior: 'auto' });
-                            }
-                        });
+                // Wait for all images to load
+                const images = document.images;
+                let loadedCount = 0;
+
+                function checkAllLoaded() {
+                    loadedCount++;
+                    if (loadedCount === images.length) {
+                        // Give the DOM a moment to stabilize
+                        setTimeout(scrollToTop, 100);
                     }
                 }
 
-                if (loadedCount === total) {
-                    window.scrollTo({ top: 0, behavior: 'auto' });
+                if (images.length === 0) {
+                    setTimeout(scrollToTop, 100);
+                } else {
+                    for (let i = 0; i < images.length; i++) {
+                        if (images[i].complete) {
+                            checkAllLoaded();
+                        } else {
+                            images[i].addEventListener('load', checkAllLoaded);
+                            images[i].addEventListener('error', checkAllLoaded);
+                        }
+                    }
                 }
-            }
-
-            // Delay a bit to let Streamlit finish rendering
-            setTimeout(scrollToTopAfterImagesLoad, 300);
+            })();
         </script>
         """, height=0)
+
         # Show results directly without tabs when calculation is complete
         st.header(T['results_title'])
         
