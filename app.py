@@ -1491,18 +1491,20 @@ def main():
                     st.components.v1.html("""
                     <script>
                     setTimeout(function() {
-                        // Try scrolling window and document
-                        window.scrollTo(0, 0);
+                        // Try all scroll strategies for best compatibility
+                        window.scrollTo(0, 0); // Desktop instant
+                        window.scrollTo({top: 0, left: 0, behavior: 'smooth'}); // Mobile smooth
                         document.body.scrollTop = 0;
                         document.documentElement.scrollTop = 0;
-                        // Try scrolling the first Streamlit element into view
-                        var firstEl = document.querySelector('main');
-                        if (firstEl) {
-                            firstEl.scrollIntoView({behavior: 'auto', block: 'start'});
+                        // Try scrolling main Streamlit content into view
+                        var mainEl = document.querySelector('main');
+                        if (mainEl) {
+                            mainEl.scrollIntoView({behavior: 'auto', block: 'start'});
                         }
-                        // Try focusing the first input element
-                        var firstInput = document.querySelector('input, textarea, select, button');
-                        if (firstInput) { firstInput.focus(); }
+                        // Try scrolling first child of body
+                        if (document.body.firstElementChild) {
+                            document.body.firstElementChild.scrollIntoView({behavior: 'auto', block: 'start'});
+                        }
                     }, 100);
                     </script>
                     """, height=0)
