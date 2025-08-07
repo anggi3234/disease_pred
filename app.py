@@ -1301,60 +1301,29 @@ def main():
         st.components.v1.html("""
         <script>
         (function() {
-            const SCROLL_KEY = 'scrolledToTopOnce';
-            if (sessionStorage.getItem(SCROLL_KEY)) return;
+            const KEY = 'scrolledToTopOnce';
+            if (sessionStorage.getItem(KEY)) return;
 
-            // Step 1: Wait for all images to load
-            function whenImagesLoaded(callback) {
-                const images = document.images;
-                let loaded = 0;
+            // Force scroll immediately
+            window.scrollTo(0, 0);
 
-                if (images.length === 0) {
-                    callback();
+            // Prevent Streamlit or browser from overriding scroll position
+            let counter = 0;
+            const maxAttempts = 30;
+
+            const interval = setInterval(() => {
+                window.scrollTo(0, 0);
+                counter += 1;
+                if (counter >= maxAttempts) {
+                    clearInterval(interval);
+                    sessionStorage.setItem(KEY, 'true');
                 }
+            }, 100); // Repeat every 100ms for ~3s total
 
-                for (let i = 0; i < images.length; i++) {
-                    if (images[i].complete) {
-                        loaded++;
-                    } else {
-                        images[i].addEventListener('load', () => {
-                            loaded++;
-                            if (loaded === images.length) callback();
-                        });
-                        images[i].addEventListener('error', () => {
-                            loaded++;
-                            if (loaded === images.length) callback();
-                        });
-                    }
-                }
-
-                if (loaded === images.length) callback();
-            }
-
-            // Step 2: Observe layout stabilization
-            function waitForLayoutStabilization(callback) {
-                let timeout = null;
-                const observer = new ResizeObserver(() => {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => {
-                        observer.disconnect();
-                        callback();
-                    }, 250); // 250ms without DOM changes = stable
-                });
-
-                observer.observe(document.body);
-            }
-
-            // Step 3: Trigger scroll once everything is stable
-            whenImagesLoaded(() => {
-                waitForLayoutStabilization(() => {
-                    window.scrollTo({ top: 0, behavior: 'auto' });
-                    sessionStorage.setItem(SCROLL_KEY, 'true');
-                });
-            });
         })();
         </script>
         """, height=0)
+
 
         # Show results directly without tabs when calculation is complete
         st.header(T['results_title'])
