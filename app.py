@@ -1491,11 +1491,17 @@ def main():
                     st.components.v1.html("""
                     <script>
                     setTimeout(function() {
+                        // Try scrolling the window
                         window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
+                        // Try scrolling the document
                         document.body.scrollTop = 0;
                         document.documentElement.scrollTop = 0;
+                        // Try focusing the first Streamlit element
+                        var firstInput = document.querySelector('input, textarea, select, button');
+                        if (firstInput) { firstInput.focus(); }
+                        // Try scrolling the first element into view
                         if (document.body.firstElementChild) {
-                        document.body.firstElementChild.scrollIntoView({behavior: 'smooth', block: 'start'});
+                            document.body.firstElementChild.scrollIntoView({behavior: 'smooth', block: 'start'});
                         }
                     }, 100);
                     </script>
