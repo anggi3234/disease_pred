@@ -1485,9 +1485,12 @@ def main():
                     print("DEBUG: Appended new row to Google Sheet.")
                     
                     # On success, set state and rerun to show results
-                    st.session_state.show_results = True
-                    st.success(T['success_msg'])
-                    st.balloons()
+                    # st.session_state.show_results = True
+                    # st.success(T['success_msg'])
+                    # st.balloons()
+                    if st.session_state.show_results:
+                    st.header(T['results_title'])
+                    st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
                     st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
                     st.rerun()
                 
