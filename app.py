@@ -1489,11 +1489,11 @@ def main():
                     # st.success(T['success_msg'])
                     # st.balloons()
                     if st.session_state.show_results:
-                    st.header(T['results_title'])
-                    st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
-                    st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
-                    st.rerun()
-                
+                        st.header(T['results_title'])
+                        st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
+                        st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
+                        st.rerun()
+                    
                 except Exception as e:
                     # Show a user-friendly error message instead of technical details
                     if st.session_state.lang == 'en':
