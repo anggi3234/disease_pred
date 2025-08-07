@@ -1488,7 +1488,18 @@ def main():
                     st.session_state.show_results = True
                     st.success(T['success_msg'])
                     st.balloons()
-                    st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
+                    st.components.v1.html("""
+                    <script>
+                    setTimeout(function() {
+                        window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
+                        document.body.scrollTop = 0;
+                        document.documentElement.scrollTop = 0;
+                        if (document.body.firstElementChild) {
+                        document.body.firstElementChild.scrollIntoView({behavior: 'smooth', block: 'start'});
+                        }
+                    }, 100);
+                    </script>
+                    """, height=0)
                     st.rerun()
                 
                 except Exception as e:
