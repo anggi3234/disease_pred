@@ -1299,10 +1299,11 @@ def main():
     if st.session_state.show_results:
             # Force scroll to top using a small JS block
         st.components.v1.html("""
+        <div style="position: fixed; top: 0;"></div>
         <script>
-            // Scroll to top as soon as this script is inserted into the DOM
-            setTimeout(function() {
-                window.scrollTo({top: 0, behavior: 'auto'});
+            setTimeout(() => {
+                document.querySelector('body').scrollTop = 0;
+                document.documentElement.scrollTop = 0;
             }, 0);
         </script>
         """, height=0)
