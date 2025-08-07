@@ -1302,7 +1302,7 @@ def main():
         <script>
             window.addEventListener('load', function() {
                 setTimeout(function() {
-                    window.scrollTo({top: 0});
+                    window.scrollTo({top: 0, behavior: 'smooth'});
                 }, 100);
             });
         </script>
