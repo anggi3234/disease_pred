@@ -1298,14 +1298,26 @@ def main():
     # Check if results should be shown and auto-select Results tab
     if st.session_state.show_results:
             # Force scroll to top using a small JS block
-        # st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
-        # Show results directly without tabs when calculation is complete
-        st.header(T['results_title'])
-        
-        # Add a button to go back to questionnaire
-        if st.button(T['back_button']):
+        st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
+            # Initialize session state
+        if 'show_results' not in st.session_state:
             st.session_state.show_results = False
-            st.rerun()
+
+        # Check if results should be shown
+        if st.session_state.show_results:
+            st.header(T['results_title'])
+
+            # Add a button to go back to questionnaire
+            if st.button(T['back_button']):
+                st.session_state.show_results = False
+                st.rerun()       
+        # Show results directly without tabs when calculation is complete
+        # st.header(T['results_title'])
+        
+        # # Add a button to go back to questionnaire
+        # if st.button(T['back_button']):
+        #     st.session_state.show_results = False
+        #     st.rerun()
         
         # Process and display results
         features = process_questionnaire_data(st.session_state.questionnaire_data)
@@ -1490,7 +1502,7 @@ def main():
                     st.session_state.show_results = True
                     st.success(T['success_msg'])
                     st.balloons()
-                    st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
+                    # st.components.v1.html("<script>window.scrollTo(0, 0);</script>", height=0)
                     st.rerun()
                 
                 except Exception as e:
