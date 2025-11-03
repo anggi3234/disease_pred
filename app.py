@@ -919,8 +919,6 @@ def map_fasting_glucose_level(glucose_str):
         'Prediabetes: 100-125 mg/dL (5.6-6.9 mmol/L)': 112,  # Midpoint
         'Diabetes: ≥126 mg/dL (7.0 mmol/L)': 140,  # Typical diabetic
         'Unknown': 100  # Use threshold value
-        'Diabetes: ≥126 mg/dL (7.0 mmol/L)': 140,  # Typical diabetic
-        'Unknown': 100  # Use threshold value
     }
     return glucose_map_calc[glucose_str]
 
@@ -1097,7 +1095,7 @@ def calculate_risk_scores(features):
             0.2 * features['alcohol_risk'] +
             0.15 * max(0, (features['bmi'] - 18.5) / (32 - 18.5)) +  # Lower BMI threshold
             0.1 * features['cancer_family_history'] * 0.1
-        )
+        ))
         # Apply multiplier to increase scores
         cancer_risk = min(cancer_risk * 1.2, 1.0)
         risk_scores['cancer'] = max(0.01, min(0.99, cancer_risk))
