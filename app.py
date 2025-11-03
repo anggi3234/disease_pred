@@ -1089,13 +1089,10 @@ def calculate_risk_scores(features):
         cancer_risk = (
             0.3 * (features['age'] - 18) / (75 - 18) +  # Lower age threshold
             0.25 * features['smoking_risk'] +
-        cancer_risk = (
-            0.3 * (features['age'] - 18) / (75 - 18) +  # Lower age threshold
-            0.25 * features['smoking_risk'] +
             0.2 * features['alcohol_risk'] +
             0.15 * max(0, (features['bmi'] - 18.5) / (32 - 18.5)) +  # Lower BMI threshold
             0.1 * features['cancer_family_history'] * 0.1
-        ))
+        )
         # Apply multiplier to increase scores
         cancer_risk = min(cancer_risk * 1.2, 1.0)
         risk_scores['cancer'] = max(0.01, min(0.99, cancer_risk))
