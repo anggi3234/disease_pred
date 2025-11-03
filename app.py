@@ -897,6 +897,7 @@ def map_cholesterol_level(cholesterol_str):
 def map_bp_medication(bp_med_str):
     """Map BP medication to numerical value"""
     bp_map_calc = {
+        'No': 0,
         'Not routine': 0.5,
         'Yes routinely': 1
     }
@@ -1274,14 +1275,12 @@ def display_results(risk_scores, recommendations, features):
     # Contact Us section
     st.header(T['take_action_header'])
     col1, col2 = st.columns(2)
-    
+
     with col1:
-        if st.button(T['promo_button'], use_container_width=True):
-            st.markdown(T['contact_whatsapp'])
-    
+        st.link_button(T['promo_button'], "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab%2C%20apakah%20ada%20promo%20untuk%20produk%20GENME%3F%20apakah%20saya%20bisa%20mendapatkan%20informasi%20lebih%20lanjut", use_container_width=True)
+
     with col2:
-        if st.button(T['inquiry_button'], use_container_width=True):
-            st.markdown(T['contact_whatsapp'])
+        st.link_button(T['inquiry_button'], "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab%2C%20saya%20tertarik%20dengan%20produk%20GENME%2C%20apakah%20saya%20bisa%20mendapatkan%20informasi%20lebih%20lanjut%3F", use_container_width=True)
 
 DRIVE_FOLDER_ID = '1NrnIvAUszGLMahXanXjgLQ9u0_0oshDZ' 
 GOOGLE_SHEET_ID = '13M-qFhz9qVdvgoSu2iRuYBkBaWzqYZaUy9BZzl32eAQ'
@@ -1490,11 +1489,11 @@ def main():
                     st.rerun()
                 
                 except Exception as e:
-                    # Show a user-friendly error message instead of technical details
-                    if st.session_state.lang == 'en':
-                        st.error("There was a problem saving your data. Please try again.")
-                    else:
-                        st.error("Terjadi masalah saat menyimpan data Anda. Silakan coba lagi.")
+                    # Show the actual error for debugging
+                    st.error(f"An error occurred: {str(e)}")
+                    print(f"DEBUG ERROR: {str(e)}")
+                    import traceback
+                    print(traceback.format_exc())
                 # except Exception as e:
                 #     # On error, this message will now stay on the screen
                 #     st.error(f"An error occurred: {str(e)}")
