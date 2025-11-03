@@ -512,7 +512,7 @@ WHATSAPP_LINKS = {
     "diabetes": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20tinggi%20atau%20menengah%20untuk%20penyakit%20diabetes.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20Medical%20Check%20Up%3F",
     "cvd": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20tinggi%20atau%20menengah%20untuk%20penyakit%20kardiovaskular.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20StrokeGENME%3F",
     "cancer": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20menengah%20untuk%20penyakit%20kanker.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20KalScreen%3F",
-    "cancer_high_risk": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20tinggi%20%20untuk%20penyakit%20kanker.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20SpotMas%3F"
+    "cancer_high_risk": "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab!%2C%20Setelah%20saya%20menggunakan%20DNA%20CARE%20Calculator%2C%20saya%20memiliki%20risiko%20tinggi%20%20untuk%20penyakit%20kanker.%20Apakah%20bisa%20diinfokan%20lebih%20lanjut%20mengenai%20tes%20Spot-Mas%3F"
 }
 
 
@@ -521,21 +521,21 @@ RECOMMENDATIONS = {
     "metabolic": {
         "en": [
             "Follow Genme Life health recommendations for metabolic optimization",
-            "Increase physical activity to 150 minutes of moderate exercise per week",
+            "Increase physical activity to a minimum of 150 minutes of moderate exercise per week",
             "Implement stress management techniques like meditation or yoga",
             "Maintain consistent sleep schedule for 7-9 hours per night",
             "Medical Check-Up Recommended",
             "Focus on gradual, sustainable weight management",
-            "Consider smoking cessation programs"
+            "Consider avoiding smoking and alcohol consumption"
         ],
         "id": [
             "Ikuti rekomendasi kesehatan Genme Life untuk optimasi metabolik",
-            "Tingkatkan aktivitas fisik hingga 150 menit olahraga sedang per minggu",
+            "Tingkatkan aktivitas fisik hingga minimal 150 menit dengan intensitas sedang per minggu",
             "Lakukan manajemen stres seperti meditasi atau yoga",
             "Tidur teratur selama 7–9 jam per malam",
-            "Pemeriksaan Medis Direkomendasikan",
+            "Lakukan medical check up rutin",
             "Fokus pada pengelolaan berat badan yang bertahap dan berkelanjutan",
-            "Pertimbangkan program berhenti merokok"
+            "Hindari merokok dan minuman beralkohol"
         ]
     },
     "cvd": {
@@ -580,8 +580,7 @@ RECOMMENDATIONS = {
     },
     "cancer": {
         "en": [
-            "Consider SpotMas screening for early cancer detection",
-            "Schedule KalScreen 69 testing panels",
+            "Consider Spot-Mas or Kalscreen 69 screening for early cancer detection ",
             "Maintain regular cancer screening as per age guidelines",
             "Adopt cancer-preventive lifestyle modifications",
             "Medical Check-Up Recommended",
@@ -589,8 +588,7 @@ RECOMMENDATIONS = {
             "Consider reducing alcohol consumption"
         ],
         "id": [
-            "Pertimbangkan pemeriksaan SpotMas untuk deteksi dini kanker",
-            "Jadwalkan panel tes KalScreen 69",
+            "Pertimbangkan pemeriksaan SpotMas untuk deteksi dini kanker atau Kalscreen 69 untuk mengetahui risiko kanker",
             "Lakukan skrining kanker secara rutin sesuai usia",
             "Terapkan gaya hidup pencegahan kanker",
             "Pemeriksaan Medis Direkomendasikan",
@@ -808,7 +806,7 @@ def process_questionnaire_data(data):
     features['alcohol_risk'] = 1 if data['lifestyle']['alcohol'] == 'Yes' else 0
     features['total_cholesterol'] = map_cholesterol_level(data['lifestyle']['total_cholesterol'])
     features['bp_medication'] = map_bp_medication(data['lifestyle']['blood_pressure_medication'])
-    features['hba1c'] = map_hba1c_level(data['lifestyle']['hba1c'])
+    # features['hba1c'] = map_hba1c_level(data['lifestyle']['hba1c'])  # Removed from calculations
     features['fasting_glucose'] = map_fasting_glucose_level(data['lifestyle']['fasting_glucose'])
     features['diabetes_symptoms'] = calculate_diabetes_symptoms(data['lifestyle'])
     
@@ -820,6 +818,7 @@ def process_questionnaire_data(data):
     features['cvd_family_history'] = map_family_history(data['health']['cvd_history'])
     
     # Current conditions flags
+    features['has_diabetes'] = 'Diabetes' in data['health']['conditions']
     features['has_diabetes'] = 'Diabetes' in data['health']['conditions']
     features['has_cvd'] = 'Cardiovascular disease' in data['health']['conditions']
     features['has_cancer'] = 'Cancer' in data['health']['conditions']
@@ -898,27 +897,28 @@ def map_cholesterol_level(cholesterol_str):
 def map_bp_medication(bp_med_str):
     """Map BP medication to numerical value"""
     bp_map_calc = {
-        'No': 0,
         'Not routine': 0.5,
         'Yes routinely': 1
     }
     return bp_map_calc[bp_med_str]
 
-def map_hba1c_level(hba1c_str):
-    """Map HbA1c dropdown to numerical value"""
-    hba1c_map_calc = {
-        '<5.7% (normal)': 5.4,  # Average normal value
-        '5.7-6.4% (prediabetes)': 6.0,  # Midpoint
-        '>6.5% (diabetes)': 7.5,  # Typical diabetic value
-        'Unknown': 5.7  # Use threshold value
-    }
-    return hba1c_map_calc[hba1c_str]
+# def map_hba1c_level(hba1c_str):
+#     """Map HbA1c dropdown to numerical value - DISABLED: Not used in calculations"""
+#     hba1c_map_calc = {
+#         '<5.7% (normal)': 5.4,  # Average normal value
+#         '5.7-6.4% (prediabetes)': 6.0,  # Midpoint
+#         '>6.5% (diabetes)': 7.5,  # Typical diabetic value
+#         'Unknown': 5.7  # Use threshold value
+#     }
+#     return hba1c_map_calc[hba1c_str]
 
 def map_fasting_glucose_level(glucose_str):
     """Map fasting glucose dropdown to numerical value"""
     glucose_map_calc = {
         'Normal: <100 mg/dL (5.6 mmol/L)': 90,  # Average normal
         'Prediabetes: 100-125 mg/dL (5.6-6.9 mmol/L)': 112,  # Midpoint
+        'Diabetes: ≥126 mg/dL (7.0 mmol/L)': 140,  # Typical diabetic
+        'Unknown': 100  # Use threshold value
         'Diabetes: ≥126 mg/dL (7.0 mmol/L)': 140,  # Typical diabetic
         'Unknown': 100  # Use threshold value
     }
@@ -983,13 +983,12 @@ def calculate_symptom_severity(health_data):
     return total_severity / len(symptoms)
 
 def calculate_framingham_risk_score(features):
-    """Simplified Framingham 10-year CVD risk based on specified factors (without SBP)"""
     age = features['age']
     is_male = features['gender_male']
     total_chol = features['total_cholesterol']
     treated_bp = features['bp_medication'] > 0  # Treated if on meds (routine or not)
     smoking = features['smoking_risk'] > 0.5  # Active smoker
-    diabetes = (features['hba1c'] >= 6.5 or features['fasting_glucose'] >= 126 or features['has_diabetes'])
+    diabetes = (features['fasting_glucose'] >= 126 or features['has_diabetes'])  # Removed HbA1c from diabetes detection
 
     # Points system adapted from Framingham (simplified; no SBP/HDL; use BP meds as proxy)
     points = 0
@@ -999,6 +998,8 @@ def calculate_framingham_risk_score(features):
         if age < 35: points += -8
         elif age <= 39: points += -3
         elif age <= 44: points += 1
+        elif age <= 49: points += 4
+        elif age <= 54: points += 7
         elif age <= 49: points += 4
         elif age <= 54: points += 7
         elif age <= 59: points += 9
@@ -1068,19 +1069,18 @@ def calculate_risk_scores(features):
         cvd_risk = min(cvd_risk * 1.2, 1.0)
         risk_scores['cvd_stroke'] = max(0.01, min(0.99, cvd_risk))
     
-    # Diabetes Risk - Unchanged from previous adjustment
     if not features['has_diabetes']:
         # Adjust waist circumference if zero
         waist_adj = features['waist_circumference'] if features['waist_circumference'] > 0 else 80
         
         diabetes_risk = (
-            0.25 * max(0, (features['bmi'] - 18.5) / (32 - 18.5)) +  # Lower BMI threshold
-            0.2 * max(0, (waist_adj - 65) / (110 - 65)) +  # Lower waist threshold
-            0.15 * min(max( (features['hba1c'] - 4.5) / (6.5 - 4.5), 0), 1) +  # Adjusted continuous scaling for HbA1c
-            0.15 * min(max( (features['fasting_glucose'] - 70) / (126 - 70), 0), 1) +  # Adjusted continuous scaling for glucose
+            0.3 * max(0, (features['bmi'] - 18.5) / (32 - 18.5)) +  # Increased weight from 0.25 to 0.3
+            0.25 * max(0, (waist_adj - 65) / (110 - 65)) +  # Increased weight from 0.2 to 0.25
+            # Removed HbA1c component (was 0.15)
+            0.25 * min(max( (features['fasting_glucose'] - 70) / (126 - 70), 0), 1) +  # Increased weight from 0.15 to 0.25
             0.1 * (1 - min(features['met_hours'] / 35, 1)) +
             0.05 * features['diabetes_family_history'] * 0.1 +
-            0.1 * features['diabetes_symptoms']
+            0.05 * features['diabetes_symptoms']  # Reduced from 0.1 to 0.05 to maintain balance
         )
         # Apply multiplier to increase scores
         diabetes_risk = min(diabetes_risk * 1.25, 1.0)
@@ -1088,6 +1088,9 @@ def calculate_risk_scores(features):
     
     # Cancer Risk - Minor adjustment to avoid 0%
     if not features['has_cancer']:
+        cancer_risk = (
+            0.3 * (features['age'] - 18) / (75 - 18) +  # Lower age threshold
+            0.25 * features['smoking_risk'] +
         cancer_risk = (
             0.3 * (features['age'] - 18) / (75 - 18) +  # Lower age threshold
             0.25 * features['smoking_risk'] +
@@ -1405,7 +1408,7 @@ def main():
                         'alcohol': questionnaire_data['lifestyle']['alcohol'],
                         'total_cholesterol': questionnaire_data['lifestyle']['total_cholesterol'],
                         'blood_pressure_medication': questionnaire_data['lifestyle']['blood_pressure_medication'],
-                        'hba1c': questionnaire_data['lifestyle']['hba1c'],
+                        # 'hba1c': questionnaire_data['lifestyle']['hba1c'],  # Removed from backend calculations
                         'fasting_glucose': questionnaire_data['lifestyle']['fasting_glucose'],
                         'frequent_hunger': questionnaire_data['lifestyle']['frequent_hunger'],
                         'frequent_thirst': questionnaire_data['lifestyle']['frequent_thirst'],
@@ -1415,6 +1418,7 @@ def main():
                         'medications': questionnaire_data['health']['medications'],
                         'diabetes_history': questionnaire_data['health']['diabetes_history'],
                         'cancer_history': questionnaire_data['health']['cancer_history'],
+                        'cvd_history': questionnaire_data['health']['cvd_history'],
                         'cvd_history': questionnaire_data['health']['cvd_history'],
                         # Symptoms (flattened from dict)
                         'symptom_fatigue': questionnaire_data['health']['symptoms']['fatigue'],
