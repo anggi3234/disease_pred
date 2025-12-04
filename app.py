@@ -11,6 +11,14 @@ from datetime import datetime
 # Removed unused pydrive2 and io imports
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get credentials from environment variables or Streamlit secrets
+DRIVE_FOLDER_ID = os.getenv('DRIVE_FOLDER_ID') or st.secrets.get('DRIVE_FOLDER_ID', '')
+GOOGLE_SHEET_ID = os.getenv('GOOGLE_SHEET_ID') or st.secrets.get('GOOGLE_SHEET_ID', '')
 
 
 # Set page config
@@ -1281,10 +1289,6 @@ def display_results(risk_scores, recommendations, features):
 
     with col2:
         st.link_button(T['inquiry_button'], "https://api.whatsapp.com/send?phone=6281510068080&text=Halo%20CR%20KALGen%20Innolab%2C%20saya%20tertarik%20dengan%20produk%20GENME%2C%20apakah%20saya%20bisa%20mendapatkan%20informasi%20lebih%20lanjut%3F", use_container_width=True)
-
-DRIVE_FOLDER_ID = '1NrnIvAUszGLMahXanXjgLQ9u0_0oshDZ' 
-GOOGLE_SHEET_ID = '13M-qFhz9qVdvgoSu2iRuYBkBaWzqYZaUy9BZzl32eAQ'
-#https://docs.google.com/spreadsheets/d/13M-qFhz9qVdvgoSu2iRuYBkBaWzqYZaUy9BZzl32eAQ/edit?gid=0#gid=0
 
 # Main app flow
 def main():
